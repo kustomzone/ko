@@ -9,6 +9,7 @@ last,
 str,
 log}  = require 'kxk'
 _     = require 'lodash'
+{Map} = require 'immutable'
 
 class Undo
     
@@ -21,9 +22,12 @@ class Undo
     # 000   000  00000000  0000000   00000000     000   
         
     reset: ->
+        @history = []
         @actions = []
         @futures = []
+        @redos   = []
         @groupCount = 0
+        @state = null
                 
     hasLineChanges: -> 
         return false if @actions.length == 0
@@ -93,7 +97,10 @@ class Undo
                 @changeInfoLineChange()
 
     redo: ->
+        # log "Undo.redo", @futures.length, @redos.length-1 if @futures.length != @redos.length-1
         if @futures.length
+            
+            
             @newChangeInfo()
             action = @futures.shift()
             
@@ -106,6 +113,14 @@ class Undo
             @editor.changed? @changeInfo, action
             @delChangeInfo()
 
+        if @redos.length
+            
+            if @redos.length > 1
+                @history.push @redos.shift()
+            @editor.state = @state = first @redos
+            if @redos.length == 1
+                @redos = []
+        
     redoSelection: (action) ->
         if action.selAfter.length
             @editor.selections = _.cloneDeep action.selAfter
@@ -139,8 +154,15 @@ class Undo
                 @editor.lines[line.newIndex] = line.after
                 @changeInfoLineChange()
                 
-    undo: ->
+    undo: -> 
+        
+        if @history.length
+            if _.isEmpty @redos
+                @redos.unshift @editor.state 
+        
         if @actions.length
+            
+            
             @newChangeInfo()
             action = @actions.pop()
             undoLines = []
@@ -194,7 +216,11 @@ class Undo
             
             @editor.changed? @changeInfo, lines: sortedLines
             @delChangeInfo()
-                                                
+
+        if @history.length
+            @editor.state = @state = @history.pop()
+            @redos.unshift @state
+            
     undoSelection: (action) ->
         if action.selBefore.length
             @editor.selections = _.cloneDeep action.selBefore 
@@ -237,7 +263,7 @@ class Undo
     cursors: (newCursors, opt) ->
         return if not @actions.length
         if not newCursors? or newCursors.length < 1
-            alert 'warning! empty cursors?'
+            alert 'warning!! empty cursors?'
             throw new Error
         
         if opt?.closestMain    
@@ -286,6 +312,9 @@ class Undo
     start: -> 
         @groupCount += 1
         if @groupCount == 1
+            @state = @editor.state
+            @history.push @state
+            
             a = @lastAction()
             @actions.push 
                 selBefore:  _.clone a.selAfter
@@ -326,6 +355,7 @@ class Undo
             after:    text
             oldIndex: index
         @editor.lines[index] = text
+        @state = @state.update 'lines', (l) -> l.set index, new Map text:text
         @changeInfoLineChange()
         
     insert: (index, text) ->
@@ -334,6 +364,7 @@ class Undo
             after:    text 
             oldIndex: index
         @editor.lines.splice index, 0, text
+        @state = @state.update 'lines', (l) -> l.splice index, 0, new Map text:text
         @changeInfoLineInsert()
         
     delete: (index) ->
@@ -344,10 +375,63 @@ class Undo
                 oldIndex: index
             @editor.emit 'willDeleteLine', index, @editor.lines[index]
             @editor.lines.splice index, 1
+            @state = @state.update 'lines', (l) -> l.splice index, 1
             @changeInfoLineDelete()
         else
             alert 'warning! last line deleted?'
             throw new Error
+
+    #  0000000   0000000   000       0000000  000   000  000       0000000   000000000  00000000 
+    # 000       000   000  000      000       000   000  000      000   000     000     000      
+    # 000       000000000  000      000       000   000  000      000000000     000     0000000  
+    # 000       000   000  000      000       000   000  000      000   000     000     000      
+    #  0000000  000   000  0000000   0000000   0000000   0000000  000   000     000     00000000 
+    
+    calculateChanges: (oldState, newState) ->
+        
+        oi = 0
+        ni = 0
+        changes = []
+            
+        oldLines = oldState.get 'lines'
+        newLines = newState.get 'lines'
+        
+        if oldLines == newLines then return changes
+        
+        ol = oldLines.get oi
+        nl = newLines.get ni
+    
+        while oi < oldLines.size
+            if ol == nl
+                oi += 1
+                ni += 1
+                ol = oldLines.get oi
+                nl = newLines.get ni
+            else if 0 < (insertions = newLines.slice(ni).findIndex (v) -> v==ol) # insertion
+                while insertions
+                    changes.push change: 'inserted', oldIndex: oi, newIndex: ni
+                    ni += 1
+                    insertions -= 1
+                nl = newLines.get ni
+            else if 0 < (deletions = oldLines.slice(oi).findIndex (v) -> v==nl) # deletion
+                while deletions
+                    changes.push change: 'deleted', oldIndex: oi, newIndex: ni
+                    oi += 1
+                    deletions -= 1
+                ol = oldLines.get oi
+            else # change
+                changes.push change: 'changed', oldIndex: oi, newIndex: ni
+                oi += 1
+                ni += 1
+                ol = oldLines.get oi
+                nl = newLines.get ni
+            
+        while ni < newLines.size
+            ni += 1
+            changes.push change: 'inserted', oldIndex: oi, newIndex: ni
+           
+        # console.log 'calculateChanges', str changes if changes.length
+        changes
         
     # 00000000  000   000  0000000  
     # 000       0000  000  000   000
@@ -359,17 +443,22 @@ class Undo
         
         if opt?.foreign
             @changeInfo?.foreign = opt.foreign
+            
         @groupCount -= 1
         @futures = []
         
         if @groupCount == 0
 
             @merge()
+            @mergeHistory()
             
             if @changeInfo?
-                @editor.changed? @changeInfo, lines: last(@actions).lines
+                @changeInfo.changes = @calculateChanges @editor.state, @state
+                @editor.changedNew? @changeInfo
                 @delChangeInfo()
-
+  
+            @editor.state = @state
+            
     # 00     00  00000000  00000000    0000000   00000000
     # 000   000  000       000   000  000        000     
     # 000000000  0000000   0000000    000  0000  0000000 
@@ -379,8 +468,29 @@ class Undo
     # looks at last two actions and merges them 
     #       when they contain no line changes
     #       when they contain only changes of the same set of lines
+
+    mergeHistory: ->
+        
+        while @history.length > 1
+            b = @history[@history.length-2]
+            a = last @history
+            if a.get('lines') == b.get('lines')
+                @history.splice @history.length-2, 1
+            else if @history.length > 2 
+                c = @history[@history.length-3]
+                if a.get('lines').size == b.get('lines').size == c.get('lines').size 
+                    for li in [0...a.get('lines').size]
+                        la = a.getIn 'lines', li
+                        lb = b.getIn 'lines', li
+                        lc = c.getIn 'lines', li
+                        if la == lb and lc != lb or la != lb and lc == lb
+                            return
+                    @history.splice @history.length-2, 2
+                else return
+            else return
     
     merge: ->
+                
         while @actions.length >= 2
             b = @actions[@actions.length-2]
             a = last @actions
@@ -405,6 +515,6 @@ class Undo
                     for i in [0...a.lines.length]
                         b.lines[i].after = a.lines[i].after
                 else return
-            else return
+            else return                    
         
 module.exports = Undo

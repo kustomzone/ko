@@ -218,6 +218,47 @@ class ViewBase extends Editor
             @emit 'selection'
         @emit 'changed', changeInfo, action
 
+    changedNew: (changeInfo) ->
+        
+        for change in changeInfo.changes
+            [oi,li,ch] = [change.oldIndex, change.newIndex, change.change]
+            switch ch
+                when 'changed'  then @syntax.diss[oi] = @syntax.dissForLineIndex li
+                when 'deleted'  then @syntax.diss.splice oi, 1
+                when 'inserted' then @syntax.diss.splice oi, 0, @syntax.dissForLineIndex li
+
+        for change in changeInfo.changes
+            [oi,li,ch] = [change.oldIndex, change.newIndex, change.change]
+            switch ch
+                when 'changed'
+                    @updateLine li, oi
+                    @emit 'lineChanged', li
+                when 'deleted'  
+                    @deleteLine li, oi
+                when 'inserted'
+                    @insertLine li, oi                    
+        
+        if changeInfo.inserted or changeInfo.deleted           
+            @scroll.setNumLines @lines.length
+            @updateScrollOffset()
+            @updateLinePositions()
+            @layersWidth = @layers.offsetWidth
+
+        if changeInfo.lines
+            @clearHighlights()
+        
+        if changeInfo.cursors
+            @renderCursors()
+            @scrollCursorIntoView()
+            @updateScrollOffset()
+            @updateCursorOffset()
+            @emit 'cursor'
+            
+        if changeInfo.selection
+            @renderSelection()   
+            @emit 'selection'
+        # @emit 'changed', changeInfo, action
+
     # 00000000  0000000    000  000000000
     # 000       000   000  000     000   
     # 0000000   000   000  000     000   

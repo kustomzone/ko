@@ -14,6 +14,9 @@ fuzzy   = require 'fuzzy'
 event   = require 'events'
 {multi} = require 'heterarchy'
 _       = require 'lodash'
+{
+List, Map
+}       = require 'immutable' 
 
 startOf = (r) -> r[0]
 endOf   = (r) -> r[0] + Math.max 1, r[1]-r[0]
@@ -22,6 +25,7 @@ class Buffer extends multi event, ranges
     
     constructor: () -> 
         @wordRegExp = new RegExp "(\\s+|\\w+|[^\\s])", 'g'
+        @state      = new Map lines: List(), selections: List(), highlights: List(), cursors: List([List([0,-1])]), mainCursor: 0
         @lines      = []
         @selections = []
         @highlights = []
@@ -33,6 +37,7 @@ class Buffer extends multi event, ranges
         @cursors    = [@mainCursor]
         @selections = []
         @highlights = []
+        @state      = new Map lines: List(@lines.map (l)-> new Map text:l), selections: List(), highlights: List(), cursors: List([List([0,@lines.length-1])]), mainCursor: 0
         @emit 'numLines', @lines.length
 
     #  0000000  000   000  00000000    0000000   0000000   00000000    0000000

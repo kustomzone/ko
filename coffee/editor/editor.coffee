@@ -23,7 +23,6 @@ _       = require 'lodash'
 class Editor extends Buffer
 
     constructor: () ->
-        @lines              = []
         @surroundStack      = []
         @surroundCharacters = []
         @surroundPairs      = Object.create null
@@ -32,10 +31,10 @@ class Editor extends Buffer
         @stickySelection    = false
         @mainCursorMove     = 0
         @watch              = null
-        @do                 = new undo @
         @dbg                = false
-        @setupFileType()
         super
+        @do                 = new undo @
+        @setupFileType()
 
     #  0000000   00000000   00000000   000      000   000
     # 000   000  000   000  000   000  000       000 000 
