@@ -29,7 +29,6 @@ class Editor extends Buffer
         @currentFile        = null
         @indentString       = _.padStart "", 4
         @stickySelection    = false
-        @mainCursorMove     = 0
         @watch              = null
         @dbg                = false
         super
@@ -315,10 +314,6 @@ class Editor extends Buffer
             @do.insert 0, ''
             @do.end()
         p = @clampPos p
-        if e and @initialCursors?.length > 1
-            @initialCursors = _.cloneDeep [@initialCursors[0]]
-        else if not e
-            @initialCursors = _.cloneDeep [p]
         @do.start()
         @startSelection e
         @mainCursor = [p[0], p[1]]
@@ -331,12 +326,10 @@ class Editor extends Buffer
             log "editor.#{name}.selectSingleRange warning! undefined range!"
             return
         @cursors = [[r[1][0], r[0]]]
-        @initialCursors = null
         @do.start()
-        @startSelection true
         @mainCursor = [opt?.before and r[1][0] or r[1][1], r[0]]
-        @do.cursors [@mainCursor], keepInitial: true     
-        @endSelection true
+        @do.cursors [@mainCursor], keepInitial: true
+        @do.selections @do.state.selections().concat [r]
         @do.end()
             
     #  0000000  00000000  000      00000000   0000000  000000000  000   0000000   000   000
@@ -354,37 +347,30 @@ class Editor extends Buffer
         @stickySelection = false
         @updateTitlebar?()
         @emit 'selection'
-        
+
     startSelection: (e) ->
-        if e and not @initialCursors
-            @initialCursors = _.cloneDeep @cursors
-            if not @stickySelection
-                @do.selections @rangesForCursors @initialCursors
-        if not e and @do.actions.length
-            if not @stickySelection
-                @do.selections []
-            
-    endSelection: (e) ->
+                    
+    endSelection: (extend) ->
         
-        if not e
+        if not extend
             if @selections.length and not @stickySelection
                 @selectNone()
-            @initialCursors = _.cloneDeep @cursors
+        else
+            newSelection = _.cloneDeep @selections
+            newCursors = @do.state.cursors()
             
-        if e and @initialCursors
-            newSelection = @stickySelection and _.cloneDeep(@selections) or []
-            if @initialCursors.length != @cursors.length
-                log 'editor.endSelection warning! @initialCursors.length != @cursors.length', @initialCursors.length, @cursors.length
+            if @cursors.length != newCursors.length
+                log '[WARNING] editor.endSelection -- oldCursors.size != newCursors.size', @cursors.length, newCursors.length
             
-            for ci in [0...@initialCursors.length]
-                ic = @initialCursors[ci]
-                cc = @cursors[ci]
-                ranges = @rangesBetweenPositions ic, cc, true #< extend to full lines if cursor at start of line                
+            for ci in [0...@cursors.length]
+                oc = @cursors[ci]
+                nc = newCursors[ci]
+                ranges = @rangesBetweenPositions oc, nc, true #< extend to full lines if cursor at start of line                
                 newSelection = newSelection.concat ranges
-                    
+
             @do.selections newSelection
             
-        @checkSalterMode()
+        @checkSalterMode()      
 
     textOfSelectionForClipboard: -> 
         @selectMoreLines() if @selections.length == 0
@@ -725,7 +711,6 @@ class Editor extends Buffer
     #  0000000   0000000   000   000  0000000    0000000   000   000
     
     setCursor: (c,l) ->
-        @mainCursorMove = 0
         l = clamp 0, @lines.length-1, l
         c = clamp 0, @lines[l].length, c
         return if @cursors.length == 1 and @isSamePos @cursors[0], [c,l]
@@ -742,7 +727,6 @@ class Editor extends Buffer
         
     addCursorAtPos: (p) ->
         @do.start()
-        @mainCursorMove = 0
         newCursors = _.cloneDeep @cursors
         newCursors.push p
         @mainCursor = p
@@ -750,7 +734,6 @@ class Editor extends Buffer
         @do.end()
         
     delCursorAtPos: (p) ->
-        @mainCursorMove = 0
         c = @cursorAtPos p
         if c and @cursors.length > 1
             @do.start()
@@ -761,7 +744,6 @@ class Editor extends Buffer
            
     addMainCursor: (dir='down') ->
         @do.start()
-        @mainCursorMove = 0
         d = switch dir
             when 'up'    then -1
             when 'down'  then +1
@@ -775,9 +757,8 @@ class Editor extends Buffer
         @do.end()
                     
     addCursors: (dir='down') ->
-        @do.start()
-        @mainCursorMove = 0
         return if @cursors.length >= 999
+        @do.start()
         d = switch dir
             when 'up'    then -1
             when 'down'  then +1
@@ -795,7 +776,6 @@ class Editor extends Buffer
 
     alignCursorsAndText: ->
         @do.start()
-        @mainCursorMove = 0
         newCursors = _.cloneDeep @cursors
         newX = _.max (c[0] for c in @cursors)
         lines = {}
@@ -809,7 +789,6 @@ class Editor extends Buffer
 
     alignCursors: (dir='down') ->
         @do.start()
-        @mainCursorMove = 0
         charPos = switch dir
             when 'up'    then first(@cursors)[0]
             when 'down'  then last( @cursors)[0]
@@ -834,7 +813,6 @@ class Editor extends Buffer
     
     setCursorsAtSelectionBoundary: (leftOrRight='right') ->
         @do.start()
-        @mainCursorMove = 0
         i = leftOrRight == 'right' and 1 or 0
         newCursors = []
         main = false
@@ -849,7 +827,6 @@ class Editor extends Buffer
         @do.end()       
 
     delCursors: (dir='up') ->
-        @mainCursorMove = 0
         newCursors = _.cloneDeep @cursors
         @mainCursor = newCursors[@indexOfCursor @mainCursor]
         d = switch dir
@@ -871,7 +848,6 @@ class Editor extends Buffer
         
     clearCursors: () -> 
         @do.start()
-        @mainCursorMove = 0
         @do.cursors [@mainCursor] 
         @do.end()
 
@@ -917,7 +893,6 @@ class Editor extends Buffer
 
     moveAllCursors: (f, opt={}) ->        
         @do.start()
-        @mainCursorMove = 0
         @startSelection opt.extend
         newCursors = _.cloneDeep @cursors
         mainLine = @mainCursor[1]
@@ -940,15 +915,13 @@ class Editor extends Buffer
         true
 
     moveMainCursor: (dir='down') ->
-        @mainCursorMove += 1
         [dx, dy] = switch dir
             when 'up'    then [0,-1]
             when 'down'  then [0,+1]
             when 'left'  then [-1,0]
             when 'right' then [+1,0]
         newCursors = _.cloneDeep @cursors
-        if @mainCursorMove > 1
-            _.remove newCursors, (c) => @isSamePos c, @mainCursor
+        _.remove newCursors, (c) => @isSamePos c, @mainCursor
         if not @cursorAtPos [@mainCursor[0]+dx, @mainCursor[1]+dy]
             newCursors.push [@mainCursor[0]+dx, @mainCursor[1]+dy]
             @mainCursor = last newCursors
@@ -959,7 +932,6 @@ class Editor extends Buffer
         @do.end()
         
     moveCursorsToLineBoundary: (leftOrRight, e) ->
-        @mainCursorMove = 0
         f = switch leftOrRight
             when 'right' then (c) => [@lines[c[1]].length, c[1]]
             when 'left'  then (c) => 
@@ -972,7 +944,6 @@ class Editor extends Buffer
         true
     
     moveCursorsToWordBoundary: (leftOrRight, e) ->
-        @mainCursorMove = 0
         f = switch leftOrRight
             when 'right' then @endOfWordAtCursor
             when 'left'  then @startOfWordAtCursor
@@ -1304,7 +1275,11 @@ class Editor extends Buffer
         if @cursors.length > 1 and l.length == 1
             l = (l[0] for c in @cursors)
         
-        if @cursors.length > 1 or l.length == 1 and not @isCursorAtStartOfLine()
+        if @name == 'editor'
+            log 'paste ewn', text.endsWith '\n'
+            log 'paste sol', @isCursorAtStartOfLine()
+            log 'paste l>1', l.length == 1 and (not @isCursorAtStartOfLine() or not text.endsWith '\n')
+        if @cursors.length > 1 or l.length == 1 and (not @isCursorAtStartOfLine() or not text.endsWith '\n')
             newCursors = _.cloneDeep @cursors
             for ci in [@cursors.length-1..0]
                 c = @cursors[ci]

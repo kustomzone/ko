@@ -28,10 +28,9 @@ class FakeView
         @editor.changed = @changed     
         @editor.on 'linesSet', (lines) => @divs = _.clone lines
         
-    changed: (changeInfo, action) =>
+    changed: (changeInfo) =>
         
-        changes = _.cloneDeep action.lines
-        while change = changes.shift()
+        for change in changeInfo.changes
             [oi,li,ch] = [change.oldIndex, change.newIndex, change.change]
             switch ch
                 when 'changed'  then @divs[oi ? li] = @editor.lines[li]
@@ -62,10 +61,12 @@ describe 'undo', ->
 
     it "exists", -> _.isObject undo = editor.do
     
-    describe 'implements', ->
-        for name in ['start', 'change', 'insert', 'delete', 'end', 'undo', 'redo']
-            it "#{name}", ->
-                _.isFunction(undo[name]).should.be.true
+    it "isObject", -> _.isObject editor
+    
+    # describe 'implements', ->
+        # for name in ['start', 'change', 'insert', 'delete', 'end', 'undo', 'redo']
+            # it "#{name}", ->
+                # _.isFunction(undo[name]).should.be.true
 
     it 'noop', -> 
         t = 'bla\nblub'
@@ -76,7 +77,6 @@ describe 'undo', ->
         .to.eql t.split '\n'
 
 compareFakeView = ->
-    # log fakeview.text()
     expect(fakeview.text()) .to.eql editor.text()
 
 # 0000000     0000000    0000000  000   0000000  

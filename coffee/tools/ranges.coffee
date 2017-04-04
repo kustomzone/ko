@@ -157,7 +157,7 @@ module.exports = class Ranges
                 p = ranges[ri-1]
                 if r[0] == p[0] # on same line
                     if r[1][0] <= p[1][1] # starts before previous ends
-                        p[1][1] = Math.max(p[1][1], r[1][1])
+                        p[1][1] = Math.max p[1][1], r[1][1] 
                         ranges.splice ri, 1
         ranges
     

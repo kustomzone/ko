@@ -173,91 +173,90 @@ class ViewBase extends Editor
     # 000       000   000  000   000  000  0000  000   000  000       000   000
     #  0000000  000   000  000   000  000   000   0000000   00000000  0000000  
   
-    changed: (changeInfo, action) ->
-        
-        changes = _.cloneDeep action.lines
-        
-        oldScrollLines = @scroll.numLines
-        
-        for change in changes
-            [oi,li,ch] = [change.oldIndex, change.newIndex, change.change]
-            switch ch
-                when 'changed'  then @syntax.diss[oi] = @syntax.dissForLineIndex li
-                when 'deleted'  then @syntax.diss.splice oi, 1
-                when 'inserted' then @syntax.diss.splice oi, 0, @syntax.dissForLineIndex li
+    # changedOld: (changeInfo, action) ->
+#         
+        # changes = _.cloneDeep action.lines
+#         
+        # for change in changes
+            # [oi,li,ch] = [change.oldIndex, change.newIndex, change.change]
+            # switch ch
+                # when 'changed'  then @syntax.diss[oi] = @syntax.dissForLineIndex li
+                # when 'deleted'  then @syntax.diss.splice oi, 1
+                # when 'inserted' then @syntax.diss.splice oi, 0, @syntax.dissForLineIndex li
 
-        while (change = changes.shift())
-            [oi,li,ch] = [change.oldIndex, change.newIndex, change.change]
-            switch ch
-                when 'changed'
-                    @updateLine li, oi
-                    @emit 'lineChanged', li
-                when 'deleted'  
-                    @deleteLine li, oi
-                when 'inserted'
-                    @insertLine li, oi                    
-        
-        if changeInfo.inserted or changeInfo.deleted           
-            @scroll.setNumLines @lines.length
-            @updateScrollOffset()
-            @updateLinePositions()
-            @layersWidth = @layers.offsetWidth
+        # while (change = changes.shift())
+            # [oi,li,ch] = [change.oldIndex, change.newIndex, change.change]
+            # switch ch
+                # when 'changed'
+                    # @updateLine li, oi
+                    # @emit 'lineChanged', li
+                # when 'deleted'  
+                    # @deleteLine li, oi
+                # when 'inserted'
+                    # @insertLine li, oi                    
+#         
+        # if changeInfo.inserted or changeInfo.deleted           
+            # @scroll.setNumLines @lines.length
+            # @updateScrollOffset()
+            # @updateLinePositions()
+            # @layersWidth = @layers.offsetWidth
 
-        if changeInfo.lines
-            @clearHighlights()
-        
-        if changeInfo.cursors
-            @renderCursors()
-            @scrollCursorIntoView()
-            @updateScrollOffset()
-            @updateCursorOffset()
-            @emit 'cursor'
-            
-        if changeInfo.selection
-            @renderSelection()   
-            @emit 'selection'
-        @emit 'changed', changeInfo, action
-
-    changedNew: (changeInfo) ->
-        
-        for change in changeInfo.changes
-            [oi,li,ch] = [change.oldIndex, change.newIndex, change.change]
-            switch ch
-                when 'changed'  then @syntax.diss[oi] = @syntax.dissForLineIndex li
-                when 'deleted'  then @syntax.diss.splice oi, 1
-                when 'inserted' then @syntax.diss.splice oi, 0, @syntax.dissForLineIndex li
-
-        for change in changeInfo.changes
-            [oi,li,ch] = [change.oldIndex, change.newIndex, change.change]
-            switch ch
-                when 'changed'
-                    @updateLine li, oi
-                    @emit 'lineChanged', li
-                when 'deleted'  
-                    @deleteLine li, oi
-                when 'inserted'
-                    @insertLine li, oi                    
-        
-        if changeInfo.inserted or changeInfo.deleted           
-            @scroll.setNumLines @lines.length
-            @updateScrollOffset()
-            @updateLinePositions()
-            @layersWidth = @layers.offsetWidth
-
-        if changeInfo.lines
-            @clearHighlights()
-        
-        if changeInfo.cursors
-            @renderCursors()
-            @scrollCursorIntoView()
-            @updateScrollOffset()
-            @updateCursorOffset()
-            @emit 'cursor'
-            
-        if changeInfo.selection
-            @renderSelection()   
-            @emit 'selection'
+        # if changeInfo.lines
+            # @clearHighlights()
+#         
+        # if changeInfo.cursors
+            # @renderCursors()
+            # @scrollCursorIntoView()
+            # @updateScrollOffset()
+            # @updateCursorOffset()
+            # @emit 'cursor'
+#             
+        # if changeInfo.selection
+            # @renderSelection()   
+            # @emit 'selection'
         # @emit 'changed', changeInfo, action
+
+    changed: (changeInfo) ->
+                
+        for change in changeInfo.changes
+            [oi,li,ch] = [change.oldIndex, change.newIndex, change.change]
+            switch ch
+                when 'changed'  then @syntax.diss[oi] = @syntax.dissForLineIndex li
+                when 'deleted'  then @syntax.diss.splice oi, 1
+                when 'inserted' then @syntax.diss.splice oi, 0, @syntax.dissForLineIndex li
+
+        for change in changeInfo.changes
+            [oi,li,ch] = [change.oldIndex, change.newIndex, change.change]
+            switch ch
+                when 'changed'
+                    @updateLine li, oi
+                    @emit 'lineChanged', li
+                when 'deleted'  
+                    @deleteLine li, oi
+                when 'inserted'
+                    @insertLine li, oi                    
+        
+        if changeInfo.inserts or changeInfo.deletes           
+            @scroll.setNumLines @lines.length
+            @updateScrollOffset()
+            @updateLinePositions()
+            @layersWidth = @layers.offsetWidth
+
+        if changeInfo.changes.length
+            @clearHighlights()
+        
+        if changeInfo.cursors
+            @renderCursors()
+            @scrollCursorIntoView()
+            @updateScrollOffset()
+            @updateCursorOffset()
+            @emit 'cursor'
+            
+        if changeInfo.selects
+            @renderSelection()   
+            @emit 'selection'
+            
+        @emit 'changed', changeInfo
 
     # 00000000  0000000    000  000000000
     # 000       000   000  000     000   
@@ -400,9 +399,13 @@ class ViewBase extends Editor
         for c in @cursors
             if c[1] >= @scroll.exposeTop and c[1] <= @scroll.exposeBot
                 cs.push [c[0], c[1] - @scroll.exposeTop]
-        
+        # console.log 'renderCursors cursors', str @cursors 
         if @cursors.length == 1
             if cs.length == 1
+                
+                if @mainCursor[1] > @lines.length-1
+                    console.log "#{@name}.renderCursors mainCursor DAFUK?", @lines.length, str @mainCursor
+                    return
                 ri = @mainCursor[1]-@scroll.exposeTop
                 if @mainCursor[0] > @lines[@mainCursor[1]].length
                     cs[0][2] = 'virtual'
@@ -414,8 +417,10 @@ class ViewBase extends Editor
             for c in cs
                 if @isMainCursor [c[0], c[1] + @scroll.exposeTop]
                     c[2] = 'main'
-                if c[0] > @lines[@scroll.exposeTop+c[1]].length
-                    vc.push [@lines[@scroll.exposeTop+c[1]].length, c[1], 'virtual']
+                line = @lines[@scroll.exposeTop+c[1]]
+                # log 'renderCursors line', line, @scroll.exposeTop, c[1]
+                if c[0] > line.length
+                    vc.push [line.length, c[1], 'virtual']
             cs = cs.concat vc
         html = render.cursors cs, @size
         @layerDict.cursors.innerHTML = html

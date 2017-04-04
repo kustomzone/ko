@@ -7,16 +7,15 @@
 clamp,
 first,
 last,
-log
+log,
+str
 }       = require "kxk"
+State   = require './state' 
 ranges  = require '../tools/ranges'
 fuzzy   = require 'fuzzy'
 event   = require 'events'
 {multi} = require 'heterarchy'
 _       = require 'lodash'
-{
-List, Map
-}       = require 'immutable' 
 
 startOf = (r) -> r[0]
 endOf   = (r) -> r[0] + Math.max 1, r[1]-r[0]
@@ -25,21 +24,35 @@ class Buffer extends multi event, ranges
     
     constructor: () -> 
         @wordRegExp = new RegExp "(\\s+|\\w+|[^\\s])", 'g'
-        @state      = new Map lines: List(), selections: List(), highlights: List(), cursors: List([List([0,-1])]), mainCursor: 0
-        @lines      = []
-        @selections = []
-        @highlights = []
-        @mainCursor = [0,-1]
-        @cursors    = [@mainCursor]
+        @setState     new State()
 
     setLines: (@lines) ->
-        @mainCursor = [0,@lines.length-1]
-        @cursors    = [@mainCursor]
-        @selections = []
-        @highlights = []
-        @state      = new Map lines: List(@lines.map (l)-> new Map text:l), selections: List(), highlights: List(), cursors: List([List([0,@lines.length-1])]), mainCursor: 0
+        @setState new State lines:@lines
         @emit 'numLines', @lines.length
 
+    setState: (@state) ->
+        # console.log 'buffer.setState', str @state.toJS()
+        if @name == 'editor'
+            log 'buffer.setState', @state.get('selections').toJS() if @state.get('selections')?.size
+        @selections = @state.selections()
+        for s in @selections
+            if s[0] == undefined
+                log "DAFUK #{@name}"
+        @highlights = @state.highlights()
+        @cursors    = @state.cursors()
+        @lines      = @state.lines()
+        
+        if @state.get('mainCursor') >= @cursors.length
+            log "DAFUK #{@name}"
+            @mainCursor = last @cursors
+        else
+            @mainCursor = @cursors[@state.get('mainCursor')]
+            
+        if @name == 'editor'
+            log "#{@name}.buffer.setState mainCursor", @mainCursor
+            if @mainCursor[1] < 0 and @lines.length
+                log "DAFUK!"
+    
     #  0000000  000   000  00000000    0000000   0000000   00000000    0000000
     # 000       000   000  000   000  000       000   000  000   000  000     
     # 000       000   000  0000000    0000000   000   000  0000000    0000000 
@@ -281,6 +294,7 @@ class Buffer extends multi event, ranges
     clampPos: (p) ->        
         if not p? or not p[0]? or not p[1]?
             alert "clampPos :: broken pos? #{p}"
+            log '[ERROR] Pos.clampPos -- invalid pos:', p
             throw new Error
             return
         if not @lines.length
