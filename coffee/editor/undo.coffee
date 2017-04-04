@@ -283,5 +283,6 @@ class Undo
     line: (lineIndex) -> @state.line(lineIndex)
     lines: -> @state.lines()
     numLines: -> @state.numLines()
+    numCursors: -> @state.numCursors()
         
 module.exports = Undo

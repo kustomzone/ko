@@ -1102,7 +1102,7 @@ class Editor extends Buffer
                     return
         
         @deleteSelection()
-        log '@do.lines after delete selection', @do.lines()
+
         newCursors = _.cloneDeep @cursors
         
         for c in @cursors # this looks weird
@@ -1118,12 +1118,12 @@ class Editor extends Buffer
 
     clampCursorOrFillVirtualSpaces: ->
         @do.start()
-        if @cursors.length == 1
-            numLines = @do.state.get('lines').size
-            cursor = @do.state.getIn ['cursors', 0]
-            cursor.set 'y', clamp 0, numLines-1, cursor.get 'y'
-            lineLength = numLines and @do.state.getIn(['lines', cursor.get('y'), 'text']).length or 0
-            cursor.set 'x', clamp 0, lineLength, cursor.get 'x'
+        if @do.numCursors() == 1
+            cursor = @do.state.cursors()[0]
+            y = clamp 0, @do.numLines()-1, cursor[1]
+            lineLength = @do.numLines() and @do.line(cursor[1]).length or 0
+            x = clamp 0, lineLength, cursor[0]
+            @do.cursors [[x,y]]
         else # fill spaces between line ends and cursors
             for c in @cursors 
                 if c[0] > @lines[c[1]].length

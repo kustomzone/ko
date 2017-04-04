@@ -33,13 +33,16 @@ class State extends StateR
     
     # read only:
         
-    selections: () -> @get('selections').map((s) -> [s.get('l'), [s.get('s'), s.get('e')]]).toArray()
-    highlights: () -> @get('highlights').map((s) -> [s.get('l'), [s.get('s'), s.get('e')]]).toArray()
-    cursors:    () -> @get('cursors').map((c) -> [c.get('x'), c.get('y')]).toArray()
-    lines:      () -> @get('lines').toArray().map (l) -> l.get 'text'
+    selections:    -> @get('selections').map((s) -> [s.get('l'), [s.get('s'), s.get('e')]]).toArray()
+    highlights:    -> @get('highlights').map((s) -> [s.get('l'), [s.get('s'), s.get('e')]]).toArray()
+    cursors:       -> @get('cursors').map((c) -> [c.get('x'), c.get('y')]).toArray()
+    lines:         -> @get('lines').toArray().map (l) -> l.get 'text'
     line:      (l) -> @getIn ['lines', l, 'text']
-    mainCursor: () -> @getIn ['cursors', @get 'main']
-    numLines:   () -> @get('lines').size
+    mainCursor:    -> @getIn ['cursors', @get 'main']
+    numLines:      -> @get('lines').size
+    numCursors:    -> @get('cursors').size
+    numSelections: -> @get('selections').size
+    numHighlights: -> @get('highlights').size
 
     # modify:
 
