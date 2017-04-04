@@ -30,13 +30,7 @@ class Buffer extends multi event, ranges
         @setState new State lines:lines
         @emit 'numLines', @numLines()
 
-    numLines: -> @state.numLines()
-
     setState: (@state) ->
-        # if @name == 'commandlist' 
-            # console.log "#{@name}.buffer.setState", str @state.toJS()
-        # if @name == 'editor'
-            # log 'buffer.setState', @state.get('selections').toJS() if @state.get('selections')?.size
         @selections = @state.selections()
         for s in @selections
             if s[0] == undefined
@@ -52,6 +46,11 @@ class Buffer extends multi event, ranges
     mainCursor: -> 
         mc = @state.mainCursor()
         [mc.get?('x') ? 0, mc.get?('y') ? -1]
+
+    numLines: -> @state.numLines()
+    numCursors: -> @state.numCursors()
+    numSelections: -> @state.numSelections()
+    numHighlights: -> @state.numHighlights()
 
     setCursors:    (c) -> @state = @state.setCursors c
     setSelections: (s) -> @state = @state.setSelections s

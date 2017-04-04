@@ -29,7 +29,7 @@ class Commandline extends ViewBase
         @scroll?.setLineHeight @size.lineHeight
         @setText ""
                 
-        @cmmd = $('.commandline-command')
+        @cmmd =$ '.commandline-command' 
         @cmmd.classList.add 'empty'
         @cmmd.addEventListener 'mousedown', @onCmmdClick
         
@@ -86,10 +86,10 @@ class Commandline extends ViewBase
     # 000       000   000  000   000  000  0000  000   000  000       000   000
     #  0000000  000   000  000   000  000   000   0000000   00000000  0000000  
 
-    changed: (changeInfo, action) ->
+    changed: (changeInfo) ->
         @hideList()
-        super changeInfo, action
-        if changeInfo.lines
+        super changeInfo
+        if changeInfo.changes.length
             @cmmd.className = "commandline-command active #{@command?.prefsID}"
             @command?.changed @lines[0]
         

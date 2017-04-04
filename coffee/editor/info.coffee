@@ -174,21 +174,21 @@ class Info
         @files.classList.toggle 'empty', fc == 0
     
     onCursor: => 
-        @cursorLine.textContent = @editor.mainCursor[1]+1
-        @cursorColumn.textContent = @editor.mainCursor[0]
-        @cursors.textContent = @editor.cursors.length
+        @cursorLine.textContent = @editor.mainCursor()[1]+1
+        @cursorColumn.textContent = @editor.mainCursor()[0]
+        @cursors.textContent = @editor.numCursors()
         @cursorColumn.classList.toggle 'virtual', @editor.isCursorVirtual()
-        @cursors.classList.toggle 'empty', @editor.cursors.length == 1
+        @cursors.classList.toggle 'empty', @editor.numCursors() == 1
         @sticky.classList.toggle 'empty', not @editor.stickySelection
         
     onSelection: =>
-        @selections.textContent = @editor.selections?.length
-        @selections.classList.toggle 'empty', @editor.selections?.length == 0
+        @selections.textContent = @editor.numSelections()
+        @selections.classList.toggle 'empty', @editor.numSelections() == 0
         @sticky.classList.toggle 'empty', not @editor.stickySelection
         
     onHighlight: =>
-        @highlights.textContent = @editor.highlights?.length
-        @highlights.classList.toggle 'empty', @editor.highlights?.length == 0
+        @highlights.textContent = @editor.numHighlights()
+        @highlights.classList.toggle 'empty', @editor.numHighlights() == 0
     
 module.exports = Info
 
