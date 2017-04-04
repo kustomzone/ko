@@ -292,10 +292,10 @@ info        = window.info        = new Info editor
 editor.setText editorText if editorText?
 editor.view.focus()
 
-editor.on 'changed', (changeInfo, action) =>
+editor.on 'changed', (changeInfo) =>
     return if changeInfo.foreign
-    if changeInfo.lines
-        ipc.send 'winFileLinesChanged', winID, editor.currentFile, action.lines
+    if changeInfo.changes.length
+        ipc.send 'winFileLinesChanged', winID, editor.currentFile, changeInfo.changes
         navigate.addFilePos file: editor.currentFile, pos: editor.cursorPos()
 
 window.editorWithName = (n) ->

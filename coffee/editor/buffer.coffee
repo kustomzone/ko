@@ -26,18 +26,21 @@ class Buffer extends multi event, ranges
         @wordRegExp = new RegExp "(\\s+|\\w+|[^\\s])", 'g'
         @setState     new State()
 
-    setLines: (@lines) ->
-        @setState new State lines:@lines
-        @emit 'numLines', @lines.length
+    setLines: (lines) ->
+        @setState new State lines:lines
+        @emit 'numLines', @numLines()
+
+    numLines: -> @state.get('lines').size
 
     setState: (@state) ->
-        # console.log 'buffer.setState', str @state.toJS()
+        if @name == 'commandlist' 
+            console.log "#{@name}.buffer.setState", str @state.toJS()
         if @name == 'editor'
             log 'buffer.setState', @state.get('selections').toJS() if @state.get('selections')?.size
         @selections = @state.selections()
         for s in @selections
             if s[0] == undefined
-                log "DAFUK #{@name}"
+                log "DAFUK selections #{@name}"
         @highlights = @state.highlights()
         @cursors    = @state.cursors()
         @lines      = @state.lines()
@@ -49,7 +52,7 @@ class Buffer extends multi event, ranges
             @mainCursor = @cursors[@state.get('mainCursor')]
             
         if @name == 'editor'
-            log "#{@name}.buffer.setState mainCursor", @mainCursor
+            # log "#{@name}.buffer.setState mainCursor", @mainCursor
             if @mainCursor[1] < 0 and @lines.length
                 log "DAFUK!"
     

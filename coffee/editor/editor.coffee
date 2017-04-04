@@ -316,20 +316,17 @@ class Editor extends Buffer
         p = @clampPos p
         @do.start()
         @startSelection e
-        @mainCursor = [p[0], p[1]]
-        @do.cursors [@mainCursor], keepInitial: true
+        @do.cursors [[p[0], p[1]]]
         @endSelection e
         @do.end()
         
     selectSingleRange: (r, opt) ->
         if not r?
-            log "editor.#{name}.selectSingleRange warning! undefined range!"
+            log "[WARNING] editor.#{name}.selectSingleRange -- undefined range!"
             return
-        @cursors = [[r[1][0], r[0]]]
         @do.start()
-        @mainCursor = [opt?.before and r[1][0] or r[1][1], r[0]]
-        @do.cursors [@mainCursor], keepInitial: true
-        @do.selections @do.state.selections().concat [r]
+        @do.cursors [[opt?.before and r[1][0] or r[1][1], r[0]]]
+        @do.selections [r]
         @do.end()
             
     #  0000000  00000000  000      00000000   0000000  000000000  000   0000000   000   000
@@ -803,14 +800,6 @@ class Editor extends Buffer
         @do.cursors newCursors
         @do.end()
         
-    clampCursors: ->
-        @do.start()
-        newCursors = _.cloneDeep @cursors
-        for c in @cursors
-            @oldCursorSet newCursors, c, @clampPos c
-        @do.cursors newCursors
-        @do.end()
-    
     setCursorsAtSelectionBoundary: (leftOrRight='right') ->
         @do.start()
         i = leftOrRight == 'right' and 1 or 0
@@ -848,7 +837,7 @@ class Editor extends Buffer
         
     clearCursors: () -> 
         @do.start()
-        @do.cursors [@mainCursor] 
+        @do.cursors [@mainCursor]
         @do.end()
 
     clearCursorsAndHighlights: () ->
@@ -909,7 +898,7 @@ class Editor extends Buffer
         @mainCursor = last  newCursors if opt.main == 'bot'
         @mainCursor = first @positionsInLineAtIndexInPositions mainLine, newCursors if opt.main == 'left'
         @mainCursor = last  @positionsInLineAtIndexInPositions mainLine, newCursors if opt.main == 'right'
-        @do.cursors newCursors, keepInitial: opt.extend
+        @do.cursors newCursors
         @endSelection opt.extend
         @do.end()
         true
@@ -1142,18 +1131,20 @@ class Editor extends Buffer
         @do.cursors newCursors
         @do.end()
         @emitEdit 'insert'
-    
+
     clampCursorOrFillVirtualSpaces: ->
-        if @cursors.length == 1
-            @clampCursors()
-        else
-            @fillVirtualSpaces()        
-    
-    fillVirtualSpaces: () -> # fill spaces between line ends and cursors
         @do.start()
-        for c in @cursors 
-            if c[0] > @lines[c[1]].length
-                @do.change c[1], @lines[c[1]].splice c[0], 0, _.padStart '', c[0]-@lines[c[1]].length
+        if @cursors.length == 1
+            numLines = @do.state.get('lines').size
+            cursor = @do.state.getIn ['cursors', 0]
+            cursor.set 'y', clamp 0, numLines-1, cursor.get 'y'
+            lineLength = numLines and @do.state.getIn(['lines', cursor.get('y'), 'text']).length or 0
+            cursor.set 'x', clamp 0, lineLength, cursor.get 'x'
+            log 'clamped cursor', cursor.toJS()
+        else # fill spaces between line ends and cursors
+            for c in @cursors 
+                if c[0] > @lines[c[1]].length
+                    @do.change c[1], @lines[c[1]].splice c[0], 0, _.padStart '', c[0]-@lines[c[1]].length
         @do.end()
 
     insertTab: ->
@@ -1589,8 +1580,7 @@ class Editor extends Buffer
         if @selections.length
             @deleteSelection()
         else if @cursors.length == 1 and not @isSamePos @mainCursor, @cursorPos()
-            @mainCursor = @cursorPos()
-            @do.cursors [@mainCursor]
+            @do.cursors [@cursorPos()]
         else if @salterMode
             @deleteSalterCharacter()
         else            

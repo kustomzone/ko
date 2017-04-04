@@ -125,7 +125,7 @@ class ViewBase extends Editor
         if @scroll.viewHeight != @viewHeight()
             @scroll.setViewHeight @viewHeight()
             @emit 'viewHeight', @viewHeight()
-        @scroll.setNumLines @lines.length
+        @scroll.setNumLines @numLines()
         @layers.scrollLeft = 0
         @layersWidth  = @layers.offsetWidth
         @layersHeight = @layers.offsetHeight
@@ -133,18 +133,20 @@ class ViewBase extends Editor
         @updateLayers()
 
     appendText: (text) ->
-        
-        ts = text?.split /\n/
-        for t in ts
-            @lines.push t
+        console.log "appendText #{text} lines:", str @state.lines()
+        ls = text?.split /\n/
+        for l in ls
+            @state = @state.appendLine l
+            console.log 'appendText lines:', str @state.get('lines').toJS()
+            @lines.push l # SUCKS
             @emit 'lineAppended', 
-                lineIndex: @lines.length-1
-                text: t
+                lineIndex: @numLines()-1
+                text:      l
         if @scroll.viewHeight != @viewHeight()
             @scroll.setViewHeight @viewHeight()        
-        @scroll.setNumLines @lines.length
-        @emit 'linesAppended', ts
-        @emit 'numLines', @lines.length
+        @scroll.setNumLines @numLines()
+        @emit 'linesAppended', ls
+        @emit 'numLines', @numLines()
 
     # 00000000   0000000   000   000  000000000
     # 000       000   000  0000  000     000   
@@ -404,8 +406,10 @@ class ViewBase extends Editor
             if cs.length == 1
                 
                 if @mainCursor[1] > @lines.length-1
-                    console.log "#{@name}.renderCursors mainCursor DAFUK?", @lines.length, str @mainCursor
+                    if @name == 'editor'
+                        console.log "#{@name}.renderCursors mainCursor DAFUK?", @lines.length, str @mainCursor
                     return
+                    
                 ri = @mainCursor[1]-@scroll.exposeTop
                 if @mainCursor[0] > @lines[@mainCursor[1]].length
                     cs[0][2] = 'virtual'

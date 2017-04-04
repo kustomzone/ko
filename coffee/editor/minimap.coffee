@@ -178,16 +178,16 @@ class Minimap
     # 000       000   000  000   000  000  0000  000   000  000     
     #  0000000  000   000  000   000  000   000   0000000   00000000
     
-    onChanged: (changeInfo, action) =>
+    onChanged: (changeInfo) =>
         
-        @drawSelections() if changeInfo.selection
+        @drawSelections() if changeInfo.selects
         @drawCursors()    if changeInfo.cursors
         
-        return if not changeInfo.lines
+        return if not changeInfo.changes.length
          
         @scroll.setNumLines @editor.lines.length
          
-        for change in action.lines
+        for change in changeInfo.changes
             li = change.oldIndex
             break if not change.change in ['deleted', 'inserted']
             @drawLines li, li

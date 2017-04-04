@@ -37,19 +37,17 @@ class Meta
     # 000       000   000  000   000  000  0000  000   000  000       000   000
     #  0000000  000   000  000   000  000   000   0000000   00000000  0000000  
     
-    onChanged: (changeInfo, action) =>
-        return if not changeInfo.lines
-        for lineChange in action.lines
-            li = lineChange.oldIndex            
-            continue if lineChange.change == 'deleted'
+    onChanged: (changeInfo) =>
+        for change in changeInfo.changes
+            li = change.oldIndex            
+            continue if change.change == 'deleted'
             for meta in @metasAtLineIndex li
-                if meta[2].clss == "searchResult"
+                if meta[2].clss == "searchResult" and meta[2].href?
                     [file, line] = meta[2].href.split ':' 
                     line -= 1
-                    localChange = _.cloneDeep lineChange
+                    localChange = _.cloneDeep change
                     localChange.oldIndex = line
                     localChange.newIndex = line
-                    # log "Meta.onChanged 'fileLineChange' at li:#{li} line:#{line}", file, localChange
                     @editor.emit 'fileLineChange', file, localChange
                     meta[2].state = 'unsaved'
                     if meta[2].span?
