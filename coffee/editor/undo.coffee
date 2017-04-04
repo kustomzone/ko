@@ -193,32 +193,47 @@ class Undo
             ol = oldLines.get oi
             nl = newLines.get ni
                 
-            while oi < oldLines.size
+            while oi < oldLines.size-1
                 if ol == nl
                     oi += 1
-                    ni += 1
                     ol = oldLines.get oi
-                    nl = newLines.get ni
+                    if ni < newLines.size-1
+                        ni += 1
+                        nl = newLines.get ni
+                    else
+                        deletions = 0
+                        while oi < oldLines.size
+                            changes.push change: 'deleted', oldIndex: oi
+                            oi += 1
+                            
                 else if 0 < (insertions = newLines.slice(ni).findIndex (v) -> v==ol) # insertion
                     while insertions
                         changes.push change: 'inserted', oldIndex: oi, newIndex: ni
                         ni += 1
                         insertions -= 1
                     nl = newLines.get ni
+                    
                 else if 0 < (deletions = oldLines.slice(oi).findIndex (v) -> v==nl) # deletion
                     while deletions
-                        changes.push change: 'deleted', oldIndex: oi, newIndex: ni
+                        changes.push change: 'deleted', oldIndex: oi
                         oi += 1
                         deletions -= 1
                     ol = oldLines.get oi
+                    
                 else # change
                     changes.push change: 'changed', oldIndex: oi, newIndex: ni
                     oi += 1
-                    ni += 1
                     ol = oldLines.get oi
-                    nl = newLines.get ni
-                
-            while ni < newLines.size
+                    if ni < newLines.size-1
+                        ni += 1
+                        nl = newLines.get ni
+                    else
+                        deletions = 0
+                        while oi < oldLines.size
+                            changes.push change: 'deleted', oldIndex: oi
+                            oi += 1
+                            
+            while ni < newLines.size-1
                 ni += 1
                 changes.push change: 'inserted', oldIndex: oi, newIndex: ni
            
