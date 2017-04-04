@@ -24,10 +24,10 @@ class LogView extends ViewBase
                 
     appendText: (text) =>
         
-        tail = @cursorPos()[1] == @lines.length-1 and @cursors.length == 1
+        tail = @cursorPos()[1] == @numLines()-1 and @cursors.length == 1
         super text
         if tail
-            @singleCursorAtPos [0, @lines.length-1] 
+            @singleCursorAtPos [0, @numLines()-1] 
             @scrollTo @scroll.fullHeight
             
 module.exports = LogView

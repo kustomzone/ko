@@ -21,7 +21,7 @@ StateR = Record
     selections: List []
     highlights: List []
     cursors:    List [new Cursor()]
-    mainCursor: 0
+    main:       0
 
 class State extends StateR
     
@@ -30,21 +30,28 @@ class State extends StateR
         super 
             lines:   List lines.map (l) -> Line text:l
             cursors: List [Cursor y:lines.length-1]
+    
+    # read only:
         
     selections: () -> @get('selections').map((s) -> [s.get('l'), [s.get('s'), s.get('e')]]).toArray()
     highlights: () -> @get('highlights').map((s) -> [s.get('l'), [s.get('s'), s.get('e')]]).toArray()
     cursors:    () -> @get('cursors').map((c) -> [c.get('x'), c.get('y')]).toArray()
     lines:      () -> @get('lines').toArray().map (l) -> l.get 'text'
+    line:      (l) -> @getIn ['lines', l, 'text']
+    mainCursor: () -> @getIn ['cursors', @get 'main']
+    numLines:   () -> @get('lines').size
+
+    # modify:
 
     setSelections: (s) -> @set 'selections', List s.map (r) -> Select s:r[1][0], e:r[1][1], l:r[0]
     setHighlights: (h) -> @set 'highlights', List h.map (r) -> Select s:r[1][0], e:r[1][1], l:r[0]
     setCursors:    (c) -> @set 'cursors',    List c.map (t) -> Cursor x:t[0], y:t[1]
     setLines:      (l) -> @set 'lines',      List l.map (t) -> Line text:t
+    setMain:       (m) -> @set 'main', m
     
     insertLine: (i,t) -> @update 'lines', (l) -> l.splice i, 0, Line text:t
     changeLine: (i,t) -> @setIn ['lines', i, 'text'], t
     deleteLine: (i)   -> @update 'lines', (l) -> l.splice i, 1
-    
-    appendLine: (t) -> @set 'lines', @get('lines').push new Line text:t
+    appendLine: (t)   -> @set 'lines', @get('lines').push new Line text:t
     
 module.exports = State

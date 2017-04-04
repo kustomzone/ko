@@ -85,7 +85,7 @@ class Info
         
         @lines = document.createElement 'span'
         @lines.className = "info-lines"
-        @lines.onclick = => @editor.focus() + @editor.singleCursorAtPos [0, @editor.lines.length]
+        @lines.onclick = => @editor.focus() + @editor.singleCursorAtPos [0, @editor.numLines()]
         @botline.appendChild @lines
 
         @files = document.createElement 'span'
@@ -135,7 +135,7 @@ class Info
         @editor.on 'highlight',    @onHighlight
         @editor.on 'cursor',       @onCursor
         
-        @onNumLines @editor.lines.length
+        @onNumLines @editor.numLines()
 
     # 00000000   00000000  000       0000000    0000000   0000000  
     # 000   000  000       000      000   000  000   000  000   000

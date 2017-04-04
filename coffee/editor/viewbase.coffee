@@ -133,11 +133,11 @@ class ViewBase extends Editor
         @updateLayers()
 
     appendText: (text) ->
-        console.log "appendText #{text} lines:", str @state.lines()
+        # console.log "appendText #{text} lines:", str @state.lines()
         ls = text?.split /\n/
         for l in ls
             @state = @state.appendLine l
-            console.log 'appendText lines:', str @state.get('lines').toJS()
+            # console.log 'appendText lines:', str @state.get('lines').toJS()
             @lines.push l # SUCKS
             @emit 'lineAppended', 
                 lineIndex: @numLines()-1
@@ -175,49 +175,6 @@ class ViewBase extends Editor
     # 000       000   000  000   000  000  0000  000   000  000       000   000
     #  0000000  000   000  000   000  000   000   0000000   00000000  0000000  
   
-    # changedOld: (changeInfo, action) ->
-#         
-        # changes = _.cloneDeep action.lines
-#         
-        # for change in changes
-            # [oi,li,ch] = [change.oldIndex, change.newIndex, change.change]
-            # switch ch
-                # when 'changed'  then @syntax.diss[oi] = @syntax.dissForLineIndex li
-                # when 'deleted'  then @syntax.diss.splice oi, 1
-                # when 'inserted' then @syntax.diss.splice oi, 0, @syntax.dissForLineIndex li
-
-        # while (change = changes.shift())
-            # [oi,li,ch] = [change.oldIndex, change.newIndex, change.change]
-            # switch ch
-                # when 'changed'
-                    # @updateLine li, oi
-                    # @emit 'lineChanged', li
-                # when 'deleted'  
-                    # @deleteLine li, oi
-                # when 'inserted'
-                    # @insertLine li, oi                    
-#         
-        # if changeInfo.inserted or changeInfo.deleted           
-            # @scroll.setNumLines @lines.length
-            # @updateScrollOffset()
-            # @updateLinePositions()
-            # @layersWidth = @layers.offsetWidth
-
-        # if changeInfo.lines
-            # @clearHighlights()
-#         
-        # if changeInfo.cursors
-            # @renderCursors()
-            # @scrollCursorIntoView()
-            # @updateScrollOffset()
-            # @updateCursorOffset()
-            # @emit 'cursor'
-#             
-        # if changeInfo.selection
-            # @renderSelection()   
-            # @emit 'selection'
-        # @emit 'changed', changeInfo, action
-
     changed: (changeInfo) ->
                 
         for change in changeInfo.changes
@@ -239,7 +196,7 @@ class ViewBase extends Editor
                     @insertLine li, oi                    
         
         if changeInfo.inserts or changeInfo.deletes           
-            @scroll.setNumLines @lines.length
+            @scroll.setNumLines @numLines()
             @updateScrollOffset()
             @updateLinePositions()
             @layersWidth = @layers.offsetWidth
@@ -401,19 +358,21 @@ class ViewBase extends Editor
         for c in @cursors
             if c[1] >= @scroll.exposeTop and c[1] <= @scroll.exposeBot
                 cs.push [c[0], c[1] - @scroll.exposeTop]
-        # console.log 'renderCursors cursors', str @cursors 
+
         if @cursors.length == 1
             if cs.length == 1
                 
-                if @mainCursor[1] > @lines.length-1
+                if @mainCursor()[1] > @numLines()-1
                     if @name == 'editor'
-                        console.log "#{@name}.renderCursors mainCursor DAFUK?", @lines.length, str @mainCursor
+                        console.log "#{@name}.renderCursors mainCursor DAFUK?", @numLines(), str @mainCursor()
                     return
                     
-                ri = @mainCursor[1]-@scroll.exposeTop
-                if @mainCursor[0] > @lines[@mainCursor[1]].length
+                ri = @mainCursor()[1]-@scroll.exposeTop
+                cursorLine = @state.line(@mainCursor()[1])
+                # log 'cursorLine:', cursorLine
+                if @mainCursor()[0] > cursorLine.length
                     cs[0][2] = 'virtual'
-                    cs.push [@lines[@mainCursor[1]].length, ri, 'main off']
+                    cs.push [cursorLine.length, ri, 'main off']
                 else
                     cs[0][2] = 'main off'
         else if @cursors.length > 1
@@ -466,21 +425,21 @@ class ViewBase extends Editor
         if cl < @scroll.top + 2
             topdelta = Math.max(0, cl - 2) - @scroll.top
         else if cl > @scroll.bot - 4
-            topdelta = Math.min(@lines.length+1, cl + 4) - @scroll.bot
+            topdelta = Math.min(@numLines()+1, cl + 4) - @scroll.bot
         
         botdelta = 0
         cl = last(@cursors)[1]
         if cl < @scroll.top + 2
             botdelta = Math.max(0, cl - 2) - @scroll.top
         else if cl > @scroll.bot - 4
-            botdelta = Math.min(@lines.length+1, cl + 4) - @scroll.bot
+            botdelta = Math.min(@numLines()+1, cl + 4) - @scroll.bot
             
         maindelta = 0
-        cl = @mainCursor[1]
+        cl = @mainCursor()[1]
         if cl < @scroll.top + 2
             maindelta = Math.max(0, cl - 2) - @scroll.top
         else if cl > @scroll.bot - 4
-            maindelta = Math.min(@lines.length+1, cl + 4) - @scroll.bot
+            maindelta = Math.min(@numLines()+1, cl + 4) - @scroll.bot
             
         maindelta
 
@@ -521,7 +480,7 @@ class ViewBase extends Editor
             @scrollOffsetTop = @scroll.offsetTop
 
     updateCursorOffset: ->
-        cx = @mainCursor[0]*@size.charWidth+@size.offsetX
+        cx = @mainCursor()[0]*@size.charWidth+@size.offsetX
         if cx-@layers.scrollLeft > @layersWidth
             @scroll.offsetLeft = Math.max 0, cx - @layersWidth + @size.charWidth
             @layers.scrollLeft = @scroll.offsetLeft
@@ -544,7 +503,7 @@ class ViewBase extends Editor
         ly = clamp 0, @layers.offsetHeight, y - br.top
         px = parseInt(Math.floor((Math.max(0, sl + lx))/@size.charWidth))
         py = parseInt(Math.floor((Math.max(0, st + ly))/@size.lineHeight)) + @scroll.exposeTop
-        p = [px, Math.min(@lines.length-1, py)]
+        p = [px, Math.min(@numLines()-1, py)]
         p
         
     posForEvent: (event) -> @posAtXY event.clientX, event.clientY
@@ -633,7 +592,7 @@ class ViewBase extends Editor
             onMove: (drag, event) => 
                 p = @posForEvent event
                 if event.metaKey
-                    @addCursorAtPos [@mainCursor[0], p[1]]
+                    @addCursorAtPos [@mainCursor()[0], p[1]]
                 else
                     @singleCursorAtPos p, true
                 
@@ -766,8 +725,8 @@ class ViewBase extends Editor
         
         switch key
             
-            when 'home'      then return @singleCursorAtPos [0, 0],              event.shiftKey
-            when 'end'       then return @singleCursorAtPos [0,@lines.length-1], event.shiftKey
+            when 'home'      then return @singleCursorAtPos [0, 0],            event.shiftKey
+            when 'end'       then return @singleCursorAtPos [0,@numLines()-1], event.shiftKey
             when 'backspace' then return
             when 'page up'
                 @moveCursorsUp event.shiftKey, @numFullLines()-3

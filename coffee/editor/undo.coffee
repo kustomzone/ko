@@ -4,6 +4,7 @@
 # 000   000  000  0000  000   000  000   000
 #  0000000   000   000  0000000     0000000 
 {
+clamp,
 first, 
 last,
 str,
@@ -100,7 +101,7 @@ class Undo
         @state = @state.insertLine index, text
         
     delete: (index) ->
-        if @editor.lines.length > 1
+        if @editor.numLines() > 1
             @editor.emit 'willDeleteLine', index, @editor.lines[index]
             @state = @state.deleteLine index
 
@@ -150,21 +151,23 @@ class Undo
             alert 'warning!! empty cursors?'
             throw new Error
         
-        if opt?.closestMain    
-            mainIndex = newCursors.indexOf @editor.posClosestToPosInPositions(@editor.mainCursor, newCursors) 
-        else if opt?.main 
+        @cleanCursors newCursors
+                
+        if opt?.main 
             switch opt.main
                 when 'first' then mainIndex = 0
                 when 'last'  then mainIndex = newCursors.length-1
-                else              mainIndex = parseInt opt.main
+                when 'closest'
+                    mainIndex = newCursors.indexOf @editor.posClosestToPosInPositions(@editor.mainCursor(), newCursors) 
+                else 
+                    mainIndex = newCursors.indexOf opt.main
+                    mainIndex = parseInt opt.main if mainIndex < 0
         else
             mainIndex = newCursors.length-1
-        
-        @editor.cleanCursors newCursors
- 
+         
         # console.log "undo.cursors #{opt}", mainIndex, str newCursors
                     
-        @state = @state.set 'mainCursor', mainIndex
+        @state = @state.set 'main', mainIndex
         @state = @state.setCursors newCursors
 
     #  0000000   0000000   000       0000000  000   000  000       0000000   000000000  00000000 
@@ -254,5 +257,27 @@ class Undo
                     @history.splice @history.length-2, 2
                 else return
             else return
+
+    #  0000000  000      00000000   0000000   000   000  
+    # 000       000      000       000   000  0000  000  
+    # 000       000      0000000   000000000  000 0 000  
+    # 000       000      000       000   000  000  0000  
+    #  0000000  0000000  00000000  000   000  000   000  
+    
+    cleanCursors: (cs) ->
+
+        for p in cs
+            p[0] = Math.max p[0], 0
+            p[1] = clamp 0, @state.numLines()-1, p[1]
+            
+        @editor.sortPositions cs
+        
+        if cs.length > 1
+            for ci in [cs.length-1...0]
+                c = cs[ci]
+                p = cs[ci-1]
+                if c[1] == p[1] and c[0] == p[0]
+                    cs.splice ci, 1
+        cs
         
 module.exports = Undo

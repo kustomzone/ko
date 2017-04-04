@@ -30,13 +30,13 @@ class Buffer extends multi event, ranges
         @setState new State lines:lines
         @emit 'numLines', @numLines()
 
-    numLines: -> @state.get('lines').size
+    numLines: -> @state.numLines()
 
     setState: (@state) ->
-        if @name == 'commandlist' 
-            console.log "#{@name}.buffer.setState", str @state.toJS()
-        if @name == 'editor'
-            log 'buffer.setState', @state.get('selections').toJS() if @state.get('selections')?.size
+        # if @name == 'commandlist' 
+            # console.log "#{@name}.buffer.setState", str @state.toJS()
+        # if @name == 'editor'
+            # log 'buffer.setState', @state.get('selections').toJS() if @state.get('selections')?.size
         @selections = @state.selections()
         for s in @selections
             if s[0] == undefined
@@ -44,17 +44,14 @@ class Buffer extends multi event, ranges
         @highlights = @state.highlights()
         @cursors    = @state.cursors()
         @lines      = @state.lines()
-        
-        if @state.get('mainCursor') >= @cursors.length
-            log "DAFUK #{@name}"
-            @mainCursor = last @cursors
-        else
-            @mainCursor = @cursors[@state.get('mainCursor')]
-            
+                    
         if @name == 'editor'
-            # log "#{@name}.buffer.setState mainCursor", @mainCursor
-            if @mainCursor[1] < 0 and @lines.length
+            if @mainCursor()[1] < 0 and @numLines()
                 log "DAFUK!"
+    
+    mainCursor: -> 
+        mc = @state.mainCursor()
+        [mc.get?('x') ? 0, mc.get?('y') ? -1]
     
     #  0000000  000   000  00000000    0000000   0000000   00000000    0000000
     # 000       000   000  000   000  000       000   000  000   000  000     
@@ -75,7 +72,7 @@ class Buffer extends multi event, ranges
         cs
                 
     indexOfCursor: (c) -> @cursors.indexOf c
-    isMainCursor: (c) -> @isSamePos c, @mainCursor
+    isMainCursor: (c) -> @isSamePos c, @mainCursor()
 
     reversedCursors: -> @cursors.reversed()
 
@@ -86,13 +83,13 @@ class Buffer extends multi event, ranges
                 cs.push c
         cs
     
-    isCursorVirtual:       (c=@mainCursor) -> @lines.length and c[1] < @lines.length and c[0] > @lines[c[1]].length
-    isCursorAtEndOfLine:   (c=@mainCursor) -> @lines.length and c[1] < @lines.length and c[0] >= @lines[c[1]].length
-    isCursorAtStartOfLine: (c=@mainCursor) -> c[0] == 0
-    isCursorInIndent:      (c=@mainCursor) -> @lines.length and @lines[c[1]].slice(0, c[0]).trim().length == 0
-    isCursorInLastLine:    (c=@mainCursor) -> c[1] == @lines.length-1
-    isCursorInFirstLine:   (c=@mainCursor) -> c[1] == 0
-    isCursorInRange:     (r,c=@mainCursor) -> @isPosInRange c, r
+    isCursorVirtual:       (c=@mainCursor()) -> @numLines() and c[1] < @numLines() and c[0] > @lines[c[1]].length
+    isCursorAtEndOfLine:   (c=@mainCursor()) -> @numLines() and c[1] < @numLines() and c[0] >= @lines[c[1]].length
+    isCursorAtStartOfLine: (c=@mainCursor()) -> c[0] == 0
+    isCursorInIndent:      (c=@mainCursor()) -> @numLines() and @lines[c[1]].slice(0, c[0]).trim().length == 0
+    isCursorInLastLine:    (c=@mainCursor()) -> c[1] == @numLines()-1
+    isCursorInFirstLine:   (c=@mainCursor()) -> c[1] == 0
+    isCursorInRange:     (r,c=@mainCursor()) -> @isPosInRange c, r
 
     # 000   000   0000000   00000000   0000000  
     # 000 0 000  000   000  000   000  000   000
@@ -100,7 +97,7 @@ class Buffer extends multi event, ranges
     # 000   000  000   000  000   000  000   000
     # 00     00   0000000   000   000  0000000  
 
-    wordAtCursor: (c=@mainCursor, opt) -> @textInRange @rangeForWordAtPos c, opt
+    wordAtCursor: (c=@mainCursor(), opt) -> @textInRange @rangeForWordAtPos c, opt
     wordsAtCursors: (cs=@cursors, opt) -> (@textInRange @rangeForWordAtPos(c, opt) for c in cs)
 
     selectionTextOrWordAtCursor: () ->
@@ -115,14 +112,14 @@ class Buffer extends multi event, ranges
         r = @rangeAtPosInRanges p, wr
         r
 
-    endOfWordAtCursor: (c=@mainCursor) =>
+    endOfWordAtCursor: (c=@mainCursor()) =>
         r = @rangeForWordAtPos c
         if @isCursorAtEndOfLine c
             return c if @isCursorInLastLine c
             r = @rangeForWordAtPos [0, c[1]+1]
         [r[1][1], r[0]]
 
-    startOfWordAtCursor: (c=@mainCursor) =>
+    startOfWordAtCursor: (c=@mainCursor()) =>
         if @isCursorAtStartOfLine c
             return c if @isCursorInFirstLine c
             r = @rangeForWordAtPos [@lines[c[1]-1].length, c[1]-1]
@@ -210,7 +207,7 @@ class Buffer extends multi event, ranges
                 else
                     break
             ep = @rangeEndPos r
-            while (ep[0] == @lines[ep[1]].length) and (ep[1] < @lines.length-1)
+            while (ep[0] == @lines[ep[1]].length) and (ep[1] < @numLines()-1)
                 nlr = @rangeForLineAtIndex ep[1]+1
                 sil = @selectionsInLineAtIndex ep[1]+1
                 if sil.length == 1 and @isSameRange sil[0], nlr
@@ -258,8 +255,8 @@ class Buffer extends multi event, ranges
     #    000     000        000 000      000   
     #    000     00000000  000   000     000   
 
-    text:            -> @lines.join '\n'
-    textInRange: (r) -> @lines[r[0]].slice r[1][0], r[1][1]
+    text:            -> @state.lines().join '\n'
+    textInRange: (r) -> @state.line(r[0]).slice? r[1][0], r[1][1]
     textsInRanges: (rgs) -> (@textInRange(r) for r in rgs)
         
     # 000  000   000  0000000    00000000  000   000  000000000
@@ -270,7 +267,7 @@ class Buffer extends multi event, ranges
         
     indentationAtLineIndex: (li) ->
         s = 0
-        return s if li >= @lines.length
+        return s if li >= @numLines()
         l = @lines[li].trimRight()
         while l[s] == ' '
             s += 1
@@ -283,27 +280,15 @@ class Buffer extends multi event, ranges
     # 000         0000000   0000000 
     
     lastPos: () -> 
-        lli = @lines.length-1
+        lli = @numLines()-1
         [@lines[lli].length, lli]
 
-    cursorPos: -> 
-        return [0,-1] if not @lines.length
-        if not @mainCursor?
-            alert 'no main cursor!'
-            throw new Error
-        else 
-            @clampPos @mainCursor 
+    cursorPos: -> @clampPos @mainCursor()
         
     clampPos: (p) ->        
-        if not p? or not p[0]? or not p[1]?
-            alert "clampPos :: broken pos? #{p}"
-            log '[ERROR] Pos.clampPos -- invalid pos:', p
-            throw new Error
-            return
-        if not @lines.length
-            return [0,-1]
-        l = clamp 0, @lines.length-1,  p[1]
-        c = clamp 0, @lines[l].length, p[0]
+        if not @numLines() then return [0,-1]
+        l = clamp 0, @numLines()-1,  p[1]
+        c = clamp 0, @state.line(l).length, p[0]
         [ c, l ]
         
     wordStartPosAfterPos: (p=@cursorPos()) ->
@@ -311,7 +296,7 @@ class Buffer extends multi event, ranges
         while p[0] < @lines[p[1]].length-1
             return [p[0]+1, p[1]] if @lines[p[1]][p[0]+1] != ' '
             p[0] += 1
-        if p[1] < @lines.length-1
+        if p[1] < @numLines()-1
             @wordStartPosAfterPos [0, p[1]+1]
         else
             null
@@ -323,7 +308,7 @@ class Buffer extends multi event, ranges
     # 000   000  000   000  000   000   0000000   00000000
 
     rangeForLineAtIndex: (i) -> 
-        throw new Error() if i >= @lines.length
+        throw new Error() if i >= @numLines()
         [i, [0, @lines[i].length]] 
         
     isRangeInString: (r) -> @rangeOfStringSurroundingRange(r)?
@@ -345,7 +330,7 @@ class Buffer extends multi event, ranges
         
     rangesForCursors: (cs=@cursors) -> ([c[1], [c[0], c[0]]] for c in cs)
     rangesForCursorLines: (cs=@cursors) -> (@rangeForLineAtIndex c[1] for c in cs)  
-    rangesForAllLines: -> @rangesForLinesFromTopToBot 0, @lines.length
+    rangesForAllLines: -> @rangesForLinesFromTopToBot 0, @numLines()
 
     rangesBetweenPositions: (a, b, extend=false) ->
         r = []
@@ -370,7 +355,7 @@ class Buffer extends multi event, ranges
     rangesForText: (t, opt) ->
         t = t.split('\n')[0]
         r = []
-        for li in [0...@lines.length]
+        for li in [0...@numLines()]
             r = r.concat @rangesForTextInLineAtIndex t, li, opt
             break if r.length >= (opt?.max ? 999)
         r        
@@ -412,28 +397,5 @@ class Buffer extends multi event, ranges
                     cc = null
                     ss = -1
         r
-                                                   
-    #  0000000  000       0000000   00     00  00000000 
-    # 000       000      000   000  000   000  000   000
-    # 000       000      000000000  000000000  00000000 
-    # 000       000      000   000  000 0 000  000      
-    #  0000000  0000000  000   000  000   000  000      
-                
-    clampPositions: (positions) ->
-        for p in positions
-            p[0] = Math.max p[0], 0
-            p[1] = clamp 0, @lines.length-1, p[1]
-           
-    cleanCursors: (cs=@cursors) ->
-        @clampPositions cs
-        @sortPositions cs
-        if cs.length > 1
-            for ci in [cs.length-1..1]
-                c = cs[ci]
-                p = cs[ci-1]
-                if c[1] == p[1] and c[0] == p[0]
-                    @mainCursor = p if @mainCursor == c
-                    cs.splice ci, 1
-        cs
-                        
+                                                                           
 module.exports = Buffer

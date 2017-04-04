@@ -105,9 +105,9 @@ class View extends ViewBase
         
         if opt?.dontSaveCursors
             s.main       = 0
-            s.cursors    = [@mainCursor] 
+            s.cursors    = [@cursorPos()] 
         else        
-            s.main       = @indexOfCursor(@mainCursor) if @indexOfCursor(@mainCursor) > 0
+            s.main       = @state.get 'main'
             s.cursors    = _.cloneDeep @cursors if @cursors.length > 1 or @cursors[0][0] or @cursors[0][1]
             s.selections = _.cloneDeep @selections if @selections.length
             s.highlights = _.cloneDeep @highlights if @highlights.length
@@ -131,10 +131,11 @@ class View extends ViewBase
         filePositions = window.getState 'filePositions', {}
         if filePositions[@currentFile]? 
             s = filePositions[@currentFile] 
-            @cursors    = s.cursors    ? [[0,0]]
-            @selections = s.selections ? []
-            @highlights = s.highlights ? []
-            @mainCursor = @cursors[Math.min @cursors.length-1, s.main ? 0]            
+            @state = @state.setCursors s.cursors ? [[0,0]]
+            @state = @state.setSelections s.selections ? []
+            @state = @state.setHighlights s.highlights ? []
+            @state = @state.setMain       s.main ? 0
+            @setState @state
             delta = (s.scroll ? @scroll.scroll) - @scroll.scroll
             @scrollBy delta if delta
             @updateLayers()

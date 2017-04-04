@@ -221,7 +221,7 @@ class Commandline extends ViewBase
         super
 
     focusTerminal: ->
-        if window.terminal.lines.length == 0
+        if window.terminal.numLines() == 0
             window.terminal.singleCursorAtPos [0,0]
         window.split.do "focus terminal"
         

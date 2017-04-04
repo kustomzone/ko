@@ -185,7 +185,7 @@ class Minimap
         
         return if not changeInfo.changes.length
          
-        @scroll.setNumLines @editor.lines.length
+        @scroll.setNumLines @editor.numLines()
          
         for change in changeInfo.changes
             li = change.oldIndex

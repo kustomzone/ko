@@ -71,7 +71,7 @@ class Brackets
         
         stack = []
         pp = pos
-        while pp[1] <= @editor.lines.length # @editor.scroll.bot # find first close bracket after
+        while pp[1] <= @editor.numLines() # @editor.scroll.bot # find first close bracket after
             [before, after] = @beforeAfterForPos pp
             while after.length
                 next = after.shift()
@@ -89,7 +89,7 @@ class Brackets
                     stack.push next
                 
             break if firstClose?
-            return if pp[1] >= @editor.lines.length-1
+            return if pp[1] >= @editor.numLines()-1
             pp = [0, pp[1]+1]
         
         return if not firstClose?

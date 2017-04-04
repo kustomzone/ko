@@ -190,7 +190,7 @@ class Meta
     # 000   000  000        000        000       000  0000  000   000
     # 000   000  000        000        00000000  000   000  0000000  
     
-    append: (meta) -> @metas.push [@editor.lines.length, [0, 0], meta]
+    append: (meta) -> @metas.push [@editor.numLines(), [0, 0], meta]
     
     onLineAppended: (e) =>  
         for meta in @metasAtLineIndex e.lineIndex
@@ -224,7 +224,7 @@ class Meta
             meta[2].div?.style.transform = "translate(#{tx}px,#{ty}px)"        
         
     onLineInserted: (li) => 
-        for meta in @editor.rangesFromTopToBotInRanges li+1, @editor.lines.length, @metas
+        for meta in @editor.rangesFromTopToBotInRanges li+1, @editor.numLines(), @metas
             meta[0] += 1
         @updatePositionsBelowLineIndex li
         
@@ -243,7 +243,7 @@ class Meta
         
         _.pullAll @metas, @metasAtLineIndex li
         
-        for meta in @editor.rangesFromTopToBotInRanges li+1, @editor.lines.length, @metas
+        for meta in @editor.rangesFromTopToBotInRanges li+1, @editor.numLines(), @metas
             meta[0] -= 1
             
         @updatePositionsBelowLineIndex li
