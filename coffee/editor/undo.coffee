@@ -280,4 +280,8 @@ class Undo
                     cs.splice ci, 1
         cs
         
+    line: (lineIndex) -> @state.line(lineIndex)
+    lines: -> @state.lines()
+    numLines: -> @state.numLines()
+        
 module.exports = Undo

@@ -155,7 +155,7 @@ describe 'medium', ->
         
         it "single cursor", ->
             editor.singleCursorAtPos [2,1]
-            expect editor.mainCursor
+            expect editor.mainCursor()
             .to.eql [2,1]
             expect editor.cursors
             .to.eql [[2,1]]
@@ -164,7 +164,7 @@ describe 'medium', ->
             
         it "select text", ->
             editor.singleCursorAtPos [3,0], true
-            expect editor.mainCursor
+            expect editor.mainCursor()
             .to.eql [3,0]
             expect editor.cursors
             .to.eql [[3,0]]
@@ -234,8 +234,8 @@ describe 'complex', ->
             
             before -> 
                 editor.setText text
-                editor.cursors = [[2,1], [2,2], [2,3], [2,4]]
-                editor.mainCursor = [2,4]
+                editor.setCursors [[2,1], [2,2], [2,3], [2,4]]
+                editor.setMain 3
                 undo.reset()
                 
             afterEach undoRedo
@@ -258,8 +258,8 @@ describe 'complex', ->
             
             before -> 
                 editor.setText text
-                editor.cursors = [[1,1], [2,1], [3,1]]
-                editor.mainCursor = [3,1]
+                editor.setCursors [[1,1], [2,1], [3,1]]
+                editor.setMain 2
                 undo.reset()
                 
             afterEach undoRedo
@@ -282,8 +282,8 @@ describe 'complex', ->
             
             before -> 
                 editor.setText text
-                editor.cursors = [[1,1], [3,1], [1,2], [3,2], [1,4], [3,4], [1,5], [3,5]]
-                editor.mainCursor = [3,5]
+                editor.setCursors [[1,1], [3,1], [1,2], [3,2], [1,4], [3,4], [1,5], [3,5]]
+                editor.setMain 7
                 undo.reset()
                 
             afterEach undoRedo
@@ -311,9 +311,9 @@ describe 'complex', ->
         
         it "row", ->
             editor.setText '0123456789'
-            editor.cursors = [[1,0], [6,0]]
-            editor.mainCursor = [6,0]
-            editor.selections = [[0, [1,4]], [0, [6,9]]]
+            editor.setCursors    [[1,0], [6,0]]
+            editor.setMain       1
+            editor.setSelections [[0, [1,4]], [0, [6,9]]]
             undo.reset()
             editor.insertUserCharacter '-'
             expect editor.text()
@@ -321,9 +321,9 @@ describe 'complex', ->
         
         it "column", ->
             editor.setText '0000\n1111\n2222\n3333'
-            editor.cursors = [[1,1], [1,2]]
-            editor.mainCursor = [1,2]
-            editor.selections = [[1, [1,2]], [2, [1,3]]]
+            editor.setCursors    [[1,1], [1,2]]
+            editor.setMain       1
+            editor.setSelections [[1, [1,2]], [2, [1,3]]]
             undo.reset()
             editor.insertUserCharacter '-'
             expect editor.lines 
@@ -333,9 +333,9 @@ describe 'complex', ->
                 
         it "row & column", ->
             editor.setText '0000\n1111\n2222\n3333'
-            editor.cursors = [[1,1], [3,1], [1,2]]
-            editor.mainCursor = [1,2]
-            editor.selections = [[1, [1,2]], [1, [3,4]], [2, [1,3]]]
+            editor.setCursors    [[1,1], [3,1], [1,2]]
+            editor.setMain       2
+            editor.setSelections [[1, [1,2]], [1, [3,4]], [2, [1,3]]]
             undo.reset()
             
             editor.insertUserCharacter '-'
@@ -428,8 +428,8 @@ describe 'complex', ->
                 
         it 'single row', ->
             editor.setText '000011112222333344445555'
-            editor.cursors = [[4,0], [8,0], [12,0], [16,0], [20,0]]
-            editor.mainCursor = [20, 0]
+            editor.setCursors [[4,0], [8,0], [12,0], [16,0], [20,0]]
+            editor.setMain 4
             undo.reset()
             editor.insertUserCharacter '-'
             expect editor.cursors
@@ -458,8 +458,7 @@ describe 'complex', ->
             editor.setText '0000\n1111\n2222'
             editor.singleCursorAtPos [2,0]
             editor.singleCursorAtPos [2,1], true
-            editor.cursors.push [2,2]
-            editor.mainCursor = [2,2]
+            editor.addCursorAtPos [2,2]
             undo.reset()
             editor.insertUserCharacter '-'
             expect editor.text()
@@ -479,7 +478,7 @@ describe 'complex', ->
             editor.setText '0000\n1111'
             editor.singleCursorAtPos [2,0]
             editor.singleCursorAtPos [2,1], true
-            editor.cursors.push [3,1]
+            editor.addCursorAtPos [3,1]
             undo.reset()
             editor.deleteSelection()
             expect editor.cursors
@@ -487,9 +486,9 @@ describe 'complex', ->
 
         it "delete multiple selections", ->
             editor.setText '0000\n1111'
-            editor.selections = [[0,[2,4]], [1, [0,2]], [1, [3,4]]]
-            editor.cursors = [[2,1], [4,1]]
-            editor.mainCursor = [4,1]
+            editor.setSelections [[0,[2,4]], [1, [0,2]], [1, [3,4]]]
+            editor.setCursors [[2,1], [4,1]]
+            editor.setMain 1
             undo.reset()
             editor.deleteSelection()
             expect editor.cursors
@@ -501,7 +500,7 @@ describe 'complex', ->
             editor.setText '0000\n1111'
             editor.singleCursorAtPos [2,0]
             editor.singleCursorAtPos [2,1], true
-            editor.cursors.push [3,1]
+            editor.addCursorAtPos [3,1]
             undo.reset()
             editor.insertUserCharacter '-'
             expect editor.text()

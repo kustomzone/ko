@@ -1093,7 +1093,7 @@ class Editor extends Buffer
         if ch == '>' and @cursors.length == 1 and @lineComment?
             cp = @cursorPos()
             cl = @lineComment.length
-            if cp[0] >= cl and @lines[cp[1]].slice(cp[0]-cl, cp[0]) == @lineComment
+            if cp[0] >= cl and @do.line(cp[1]).slice(cp[0]-cl, cp[0]) == @lineComment
                 ws = @wordStartPosAfterPos()
                 if ws?
                     @do.delete cp[1]
@@ -1102,14 +1102,12 @@ class Editor extends Buffer
                     return
         
         @deleteSelection()
+        log '@do.lines after delete selection', @do.lines()
         newCursors = _.cloneDeep @cursors
         
         for c in @cursors # this looks weird
             cc = newCursors[@indexOfCursor c]
-            if cc.length < 2 or cc[1] >= @numLines()
-                alert "wtf?"
-                throw new Error
-            @do.change cc[1], @lines[cc[1]].splice cc[0], 0, ch
+            @do.change cc[1], @do.line(cc[1]).splice cc[0], 0, ch
             for nc in @positionsInLineAtIndexInPositions cc[1], newCursors
                 if nc[0] >= cc[0]
                     nc[0] += 1
@@ -1474,20 +1472,20 @@ class Editor extends Buffer
                         @newCursorSet newCursors, nc, sp[0]+nc[0]-ep[0], sp[1] 
                         
         for s in @reversedSelections()
-            continue if s[0] >= @numLines()
-            lineSelected = s[1][0] == 0 and s[1][1] == @lines[s[0]].length
-            if lineSelected and @numLines() > 1
+            continue if s[0] >= @do.numLines()
+            lineSelected = s[1][0] == 0 and s[1][1] == @do.line(s[0]).length
+            if lineSelected and @do.numLines() > 1
                 @do.delete s[0]
                 for nc in @positionsBelowLineIndexInPositions s[0], newCursors
                     @newCursorDelta newCursors, nc, 0, -1 # move cursors below deleted line up
             else
-                continue if s[0] >= @numLines()
-                @do.change s[0], @lines[s[0]].splice s[1][0], s[1][1]-s[1][0]
+                continue if s[0] >= @do.numLines()
+                @do.change s[0], @do.line(s[0]).splice s[1][0], s[1][1]-s[1][0]
                 for nc in @positionsAfterLineColInPositions s[0], s[1][1], newCursors
                     @newCursorDelta newCursors, nc, -(s[1][1]-s[1][0]) # move cursors after deletion in same line left
 
             if s[0] in joinLines
-                @do.change s[0], @lines[s[0]] + @lines[s[0]+1]
+                @do.change s[0], @do.line(s[0]) + @do.line(s[0]+1)
                 @do.delete s[0]+1
                 for nc in @positionsBelowLineIndexInPositions s[0], newCursors
                     @newCursorDelta newCursors, nc, 0, -1 # move cursors below deleted line up                

@@ -131,10 +131,10 @@ class View extends ViewBase
         filePositions = window.getState 'filePositions', {}
         if filePositions[@currentFile]? 
             s = filePositions[@currentFile] 
-            @state = @state.setCursors s.cursors ? [[0,0]]
-            @state = @state.setSelections s.selections ? []
-            @state = @state.setHighlights s.highlights ? []
-            @state = @state.setMain       s.main ? 0
+            @setCursors    s.cursors ? [[0,0]]
+            @setSelections s.selections ? []
+            @setHighlights s.highlights ? []
+            @setMain       s.main ? 0
             @setState @state
             delta = (s.scroll ? @scroll.scroll) - @scroll.scroll
             @scrollBy delta if delta

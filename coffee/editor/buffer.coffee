@@ -52,6 +52,11 @@ class Buffer extends multi event, ranges
     mainCursor: -> 
         mc = @state.mainCursor()
         [mc.get?('x') ? 0, mc.get?('y') ? -1]
+
+    setCursors:    (c) -> @state = @state.setCursors c
+    setSelections: (s) -> @state = @state.setSelections s
+    setHighlights: (h) -> @state = @state.setHighlights h
+    setMain:       (m) -> @state = @state.setMain m
     
     #  0000000  000   000  00000000    0000000   0000000   00000000    0000000
     # 000       000   000  000   000  000       000   000  000   000  000     
