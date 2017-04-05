@@ -8,6 +8,15 @@ _ = require 'lodash'
 
 module.exports = class Ranges
 
+    cursorDelta: (c, dx, dy=0) ->
+        c[0] += dx
+        c[1] += dy
+        
+    cursorSet: (c, x, y) ->    
+        [x,y] = x if not y? and x.length >=2
+        c[0] = x
+        c[1] = y
+
     indentationInLine: (l) ->
         s = 0
         if l? and l.length > 0
