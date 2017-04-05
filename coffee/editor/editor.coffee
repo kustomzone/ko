@@ -810,14 +810,14 @@ class Editor extends Buffer
                 for c in oldCursors.reversed()
                     if @isPosInPositions([c[0], c[1]-1], oldCursors) and not @isPosInPositions [c[0], c[1]+1], oldCursors
                         ci = oldCursors.indexOf c
-                        if @isMainCursor newCursors[ci]
+                        if @isSamePos @do.mainCursor(), newCursors[ci]
                             main = @posInPositions [c[0], c[1]-1], newCursors  
                         newCursors.splice ci, 1
             when 'down' 
                 for c in oldCursors.reversed()
                     if @isPosInPositions([c[0], c[1]+1], oldCursors) and not @isPosInPositions [c[0], c[1]-1], oldCursors
                         ci = oldCursors.indexOf c
-                        if @isMainCursor newCursors[ci]
+                        if @isSamePos @do.mainCursor(), newCursors[ci]
                             main = @posInPositions [c[0], c[1]+1], newCursors  
                         newCursors.splice ci, 1
         @do.cursor newCursors, main:main
@@ -1501,7 +1501,7 @@ class Editor extends Buffer
         else
             @do.start()
             newCursors = @do.cursors()
-            for c in @reversedCursors()
+            for c in newCursors.reversed()
             
                 if @isCursorAtEndOfLine c # cursor at end of line
                     if not @isCursorInLastLine c # cursor not in first line
@@ -1537,7 +1537,7 @@ class Editor extends Buffer
         @do.start()
         if @do.numSelections()
             @deleteSelection()
-        else if @do.numCursors() == 1 and not @isMainCursor(@cursorPos()) 
+        else if @do.numCursors() == 1 and not @isSamePos @do.mainCursor(), @cursorPos()
             log "[???WTF???] editor.#{@name}.deleteBackward -- what is this doing ???"
             @do.cursor [@cursorPos()]
         else if @salterMode
@@ -1584,7 +1584,7 @@ class Editor extends Buffer
                     n -= t.trimRight().length
                     Math.max 1, n
             
-        for c in @reversedCursors()
+        for c in newCursors.reversed()
             if c[0] == 0 # cursor at start of line
                 if opt?.ignoreLineBoundary or @do.numCursors() == 1
                     if c[1] > 0 # cursor not in first line

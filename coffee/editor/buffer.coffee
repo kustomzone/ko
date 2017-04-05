@@ -67,25 +67,6 @@ class Buffer extends multi event, ranges
     # 000       000   000  000   000       000  000   000  000   000       000
     #  0000000   0000000   000   000  0000000    0000000   000   000  0000000 
             
-    cursorsInRange: (r) ->
-        cs = []
-        for c in @cursors
-            if @isPosInRange c, r
-                cs.push c
-        cs
-                
-    indexOfCursor: (c) -> @cursors.indexOf c
-    isMainCursor: (c) -> @isSamePos c, @mainCursor()
-
-    reversedCursors: -> @cursors.reversed()
-
-    cursorsInLineAtIndex: (li) ->
-        cs = []
-        for c in @cursors
-            if c[1] == li
-                cs.push c
-        cs
-    
     isCursorVirtual:       (c=@mainCursor()) -> @numLines() and c[1] < @numLines() and c[0] > @lines[c[1]].length
     isCursorAtEndOfLine:   (c=@mainCursor()) -> @numLines() and c[1] < @numLines() and c[0] >= @lines[c[1]].length
     isCursorAtStartOfLine: (c=@mainCursor()) -> c[0] == 0

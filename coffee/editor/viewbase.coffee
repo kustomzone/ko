@@ -369,7 +369,6 @@ class ViewBase extends Editor
                     
                 ri = @mainCursor()[1]-@scroll.exposeTop
                 cursorLine = @state.line(@mainCursor()[1])
-                # log 'cursorLine:', cursorLine
                 if @mainCursor()[0] > cursorLine.length
                     cs[0][2] = 'virtual'
                     cs.push [cursorLine.length, ri, 'main off']
@@ -378,10 +377,9 @@ class ViewBase extends Editor
         else if @numCursors() > 1
             vc = [] # virtual cursors
             for c in cs
-                if @isMainCursor [c[0], c[1] + @scroll.exposeTop]
+                if @isSamePos @mainCursor(), [c[0], c[1] + @scroll.exposeTop]
                     c[2] = 'main'
                 line = @lines[@scroll.exposeTop+c[1]]
-                # log 'renderCursors line', line, @scroll.exposeTop, c[1]
                 if c[0] > line.length
                     vc.push [line.length, c[1], 'virtual']
             cs = cs.concat vc
