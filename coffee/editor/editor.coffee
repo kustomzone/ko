@@ -310,9 +310,9 @@ class Editor extends Buffer
             @do.end()
         p = @clampPos p
         @do.start()
-        @startSelection e
+        @startSelection opt
         @do.cursor [[p[0], p[1]]]
-        @endSelection e
+        @endSelection opt
         @do.end()
         
     selectSingleRange: (r, opt) ->
@@ -340,20 +340,30 @@ class Editor extends Buffer
         @updateTitlebar?()
         @emit 'selection'
 
-    startSelection: (extend) ->
+    startSelection: (opt = extend:false) ->
+        if opt?.extend 
+            if not @startSelectionCursors
+                @startSelectionCursors = @do.cursors()
+                if not @stickySelection
+                    @do.select @rangesForCursors @startSelectionCursors
+        else
+            @startSelectionCursors = null
+            if not @stickySelection
+                @do.select []
                     
-    endSelection: (extend) ->
+    endSelection: (opt = extend:false) ->
         
-        if not extend
+        if not opt?.extend
             if @do.numSelections() and not @stickySelection
                 @selectNone()
+            @startSelectionCursors = null
         else
-            newSelection = _.cloneDeep @do.selections()
-            oldCursors = @state.cursors()
+            newSelection = @do.selections()
+            oldCursors = @startSelectionCursors ? @state.cursors()
             newCursors = @do.cursors()
             
             if oldCursors.length != newCursors.length
-                log '[WARNING] editor.endSelection -- oldCursors.size != newCursors.size', oldCursors.length, newCursors.length
+                log "[WARNING] editor.#{@name}.endSelection -- oldCursors.size != newCursors.size", oldCursors.length, newCursors.length
             
             for ci in [0...@do.numCursors()]
                 oc = oldCursors[ci]
@@ -854,9 +864,9 @@ class Editor extends Buffer
     # 000 0 000  000   000     000     000     
     # 000   000   0000000       0      00000000
 
-    moveAllCursors: (f, opt= extend:false) ->        
+    moveAllCursors: (f, opt = extend:false) ->        
         @do.start()
-        @startSelection opt.extend
+        @startSelection opt
         newCursors = _.cloneDeep @cursors
         oldMain = @mainCursor()
         mainLine = oldMain[1]
@@ -876,7 +886,7 @@ class Editor extends Buffer
             when 'right' then newCursors.indexOf last  @positionsInLineAtIndexInPositions mainLine, newCursors
             
         @do.cursor newCursors, main:main
-        @endSelection opt.extend
+        @endSelection opt
         @do.end()
         true
 
