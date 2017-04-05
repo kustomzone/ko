@@ -165,14 +165,8 @@ compareFakeView = ->
 describe 'basic', ->
     afterEach -> compareFakeView()
     describe 'edit', ->
-
         beforeEach -> undo.start()
 
-        # afterEach -> 
-            # log "history after #{undo.history.length}", last(undo.history)?.toJS()
-            # for h in undo.history
-                # log '-----', h.get('lines').toJS()
-    
         it 'change', ->
             undo.change 0, 'hello world'
             undo.end()
@@ -192,9 +186,7 @@ describe 'basic', ->
             .to.eql ['hello world', 'blub']
             
     describe 'undo', ->
-        beforeEach -> 
-            # log "history #{undo.history.length}", last(undo.history)?.toJS()
-            undo.undo()
+        beforeEach -> undo.undo()
         
         it 'delete', ->
             expect editor.lines 
@@ -237,9 +229,6 @@ describe 'medium', ->
             editor.setText 'hello\nworld'
             undo.reset()
         
-        # beforeEach ->
-            # log "history #{undo.history.length}", last(undo.history)?.toJS()
-        
         it "single cursor", ->
             editor.singleCursorAtPos [2,1]
             expect editor.mainCursor()
@@ -266,10 +255,7 @@ describe 'medium', ->
             .to.eql 'hel-rld'
 
     describe 'undo', ->
-        beforeEach -> 
-            # log "history #{undo.history.length}", last(undo.history)?.toJS()
-            # log 'redos', first(undo.redos)?.toJS()
-            undo.undo()
+        beforeEach -> undo.undo()
         
         it "input", ->
             expect editor.text()
@@ -391,7 +377,6 @@ describe 'complex', ->
     # 000  000   000  0000000   00000000  000   000     000   
     
     describe 'selection insert', ->
-        
         afterEach undoRedo
         
         it "row", ->

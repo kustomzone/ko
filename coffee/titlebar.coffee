@@ -18,7 +18,7 @@ ipc      = electron.ipcRenderer
 class Titlebar
     
     constructor: () ->
-        @elem = $('.titlebar')
+        @elem =$ '.titlebar' 
         @elem.ondblclick = (event) => ipc.send 'maximizeWindow', window.winID
         @selected = -1
         $('.body').addEventListener 'focusout', @closeList

@@ -693,10 +693,10 @@ class ViewBase extends Editor
                 return
                 
             when 'alt+shift+up', 'alt+shift+down' then return @duplicateLines  key
-            when 'alt+up',     'alt+down'     then return @moveLines  key
-            when 'command+up', 'command+down' then return @addCursors key
-            when 'ctrl+a',     'ctrl+shift+a' then return @moveCursorsToLineBoundary 'left',  event.shiftKey
-            when 'ctrl+e',     'ctrl+shift+e' then return @moveCursorsToLineBoundary 'right', event.shiftKey
+            when 'alt+up',       'alt+down'       then return @moveLines  key
+            when 'command+up',   'command+down'   then return @addCursors key
+            when 'ctrl+a',       'ctrl+shift+a'   then return @moveCursorsToLineBoundary 'left',  event.shiftKey
+            when 'ctrl+e',       'ctrl+shift+e'   then return @moveCursorsToLineBoundary 'right', event.shiftKey
             when 'ctrl+k'
                 @do.start()
                 @moveCursorsToLineBoundary 'right', true
@@ -712,11 +712,11 @@ class ViewBase extends Editor
                         
             when 'command+shift+left', 'command+shift+right' then return @moveCursorsToLineBoundary key, true
             when 'command+shift+up',   'command+shift+down'  then return @delCursors    key
-            when 'ctrl+alt+shift+right'                      then return @alignCursorsAndText()
-            when 'alt+ctrl+up', 'alt+ctrl+down', 'alt+ctrl+left',  'alt+ctrl+right'        then return @alignCursors  key
-            when 'ctrl+up',     'ctrl+down',     'ctrl+left',      'ctrl+right'            then return @moveMainCursor key
-            when 'ctrl+shift+up', 'ctrl+shift+down', 'ctrl+shift+left', 'ctrl+shift+right' then return @moveMainCursor key, erase: true
-            when 'alt+left',    'alt+right',     'alt+shift+left', 'alt+shift+right'       then return @moveCursorsToWordBoundary key, event.shiftKey
+            when 'alt+ctrl+shift+right'                      then return @alignCursorsAndText()
+            when 'alt+ctrl+up',   'alt+ctrl+down',   'alt+ctrl+left',   'alt+ctrl+right'        then return @alignCursors  key
+            when 'ctrl+up',       'ctrl+down',       'ctrl+left',       'ctrl+right'            then return @moveMainCursor key
+            when 'ctrl+shift+up', 'ctrl+shift+down', 'ctrl+shift+left', 'ctrl+shift+right'      then return @moveMainCursor key, erase: true
+            when 'alt+left',       'alt+right',      'alt+shift+left',  'alt+shift+right'       then return @moveCursorsToWordBoundary key, event.shiftKey
             when 'down', 'right', 'up', 'left', 'shift+down', 'shift+right', 'shift+up', 'shift+left' 
                 @moveCursors key, event.shiftKey
                 stop event

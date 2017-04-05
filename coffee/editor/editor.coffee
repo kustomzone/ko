@@ -1240,12 +1240,7 @@ class Editor extends Buffer
         l = text.split '\n'
         if @cursors.length > 1 and l.length == 1
             l = (l[0] for c in @cursors)
-        
-        if @name == 'editor'
-            log 'paste ewn', text.endsWith '\n'
-            log 'paste sol', @isCursorAtStartOfLine()
-            log 'paste l>1', l.length == 1 and (not @isCursorAtStartOfLine() or not text.endsWith '\n')
-            
+                    
         if @cursors.length > 1 or l.length == 1 and (not @isCursorAtStartOfLine() or not text.endsWith '\n')
             newCursors = _.cloneDeep @cursors
             for ci in [@cursors.length-1..0]
