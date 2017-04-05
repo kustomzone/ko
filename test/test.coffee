@@ -460,13 +460,10 @@ describe 'complex', ->
         it "double", ->
             editor.setText '0000\n1111\n2222\n3333\n4444\n5555'
             editor.singleCursorAtPos [2,1]
-            editor.moveMainCursor 'down'
-            editor.moveMainCursor 'down'
+            editor.moveMainCursor 'down', erase:false
+            editor.moveMainCursor 'down', erase:true
             editor.moveCursors 'down', true
-            log 'cursors:', editor.state.cursors()
-            log 'selections:', editor.state.selections()
             undo.reset()
-            
             editor.insertUserCharacter '-'
             expect editor.text()
             .to.eql '0000\n11-22\n33-44\n5555'
@@ -484,10 +481,10 @@ describe 'complex', ->
         it "triple", ->
             editor.setText '0000\n1111\n2222\n3333\n4444\n5555\n6666\n7777\n8888'
             editor.singleCursorAtPos [2,1]
-            editor.moveMainCursor 'down'
-            editor.moveMainCursor 'down'
-            editor.moveMainCursor 'down'
-            editor.moveMainCursor 'down'
+            editor.moveMainCursor 'down', erase:false
+            editor.moveMainCursor 'down', erase:true
+            editor.moveMainCursor 'down', erase:true
+            editor.moveMainCursor 'down', erase:true
             editor.moveCursors 'down', true
             editor.moveCursors 'down', true
             undo.reset()
