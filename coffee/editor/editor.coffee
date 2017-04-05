@@ -393,7 +393,7 @@ class Editor extends Buffer
     
     addRangeToSelection: (range) ->
         @do.start()
-        newSelections = _.cloneDeep @selections
+        newSelections = @do.selections()
         newSelections.push range
         newCursors = (@rangeEndPos(r) for r in newSelections)
         @do.cursor newCursors, main:'last'
@@ -403,7 +403,7 @@ class Editor extends Buffer
     removeFromSelection: (sel) ->
         @do.start()
         si = @selections.indexOf sel
-        newSelections = _.cloneDeep @selections
+        newSelections = @do.selections()
         newSelections.splice si, 1
         if newSelections.length
             newCursors = (@rangeEndPos(r) for r in newSelections)
@@ -441,8 +441,8 @@ class Editor extends Buffer
 
     selectMoreLines: ->
         @do.start()
-        newCursors = _.cloneDeep @cursors
-        newSelections = _.cloneDeep @selections
+        newCursors = @do.cursors()
+        newSelections = @do.selections()
         
         selectCursorLineAtIndex = (c,i) =>
             range = @rangeForLineAtIndex i
@@ -465,8 +465,8 @@ class Editor extends Buffer
 
     selectLessLines: -> 
         @do.start()
-        newCursors    = _.cloneDeep @cursors
-        newSelections = _.cloneDeep @selections
+        newCursors    = @do.cursors()
+        newSelections = @do.selections()
         
         for c in @reversedCursors()
             thisSel = @selectionsInLineAtIndex(c[1])
@@ -523,12 +523,12 @@ class Editor extends Buffer
         return if not csr.length
         
         @do.start()
-        newCursors = _.cloneDeep @cursors
+        newCursors = @do.cursors()
 
         for r in csr.reversed()
             ls = []
             for li in [r[0]..r[1]]
-                ls.push _.cloneDeep @lines[li]
+                ls.push @do.line(li)
             
             for i in [0...ls.length]
                 @do.insert r[1]+1+i, ls[i]
@@ -725,7 +725,7 @@ class Editor extends Buffer
         
     addCursorAtPos: (p) ->
         @do.start()
-        newCursors = _.cloneDeep @cursors
+        newCursors = @do.cursors()
         newCursors.push p
         @do.cursor newCursors, main:'last'
         @do.end()
@@ -734,7 +734,7 @@ class Editor extends Buffer
         c = @cursorAtPos p
         if c and @numCursors() > 1
             @do.start()
-            newCursors = _.cloneDeep @cursors
+            newCursors = @do.cursors()
             newCursors.splice @indexOfCursor(c), 1
             @do.cursor newCursors, main:'closest'
             @do.end()
@@ -745,7 +745,7 @@ class Editor extends Buffer
         d = switch dir
             when 'up'    then -1
             when 'down'  then +1
-        newCursors = _.cloneDeep @cursors
+        newCursors = @do.cursors()
         for c in @cursors
             if not @cursorAtPos [c[0], c[1]+d]                
                 newCursors.push [c[0], c[1]+d]
@@ -759,7 +759,7 @@ class Editor extends Buffer
 
     alignCursorsAndText: ->
         @do.start()
-        newCursors = _.cloneDeep @cursors
+        newCursors = @do.cursors()
         newX = _.max (c[0] for c in @cursors)
         lines = {}
         for c in @cursors
@@ -777,7 +777,7 @@ class Editor extends Buffer
             when 'down'  then last( @cursors)[0]
             when 'left'  then _.min (c[0] for c in @cursors)
             when 'right' then _.max (c[0] for c in @cursors)
-        newCursors = _.cloneDeep @cursors
+        newCursors = @do.cursors()
         for c in @cursors
             @oldCursorSet newCursors, c, charPos, c[1]
         main = switch dir
@@ -801,7 +801,7 @@ class Editor extends Buffer
 
     delCursors: (dir='up') ->
         @do.start()
-        newCursors = _.cloneDeep @cursors
+        newCursors = @do.cursors()
         main = null
         d = switch dir
             when 'up' 
@@ -898,7 +898,7 @@ class Editor extends Buffer
             when 'down'  then [0,+1]
             when 'left'  then [-1,0]
             when 'right' then [+1,0]
-        newCursors = _.cloneDeep @cursors
+        newCursors = @do.cursors()
         oldMain = @mainCursor()
         newMain = [oldMain[0]+dx, oldMain[1]+dy]
         _.remove newCursors, (c) => 
@@ -950,7 +950,7 @@ class Editor extends Buffer
         else if e and @stickySelection and @numCursors() == 1
             if @mainCursor()[0] == 0 and not @isSelectedLineAtIndex @mainCursor()[1]
                 @do.start()
-                newSelections = _.cloneDeep @selections
+                newSelections = @do.selections()
                 newSelections.push @rangeForLineAtIndex @mainCursor()[1]
                 @do.select newSelections
                 @do.end()
@@ -1109,7 +1109,7 @@ class Editor extends Buffer
         
         @deleteSelection()
 
-        newCursors = _.cloneDeep @cursors
+        newCursors = @do.cursors()
         
         for c in @cursors # this looks weird
             cc = newCursors[@indexOfCursor c]
@@ -1460,7 +1460,7 @@ class Editor extends Buffer
     deleteSelection: ->
         return if not @selections.length
         @do.start()
-        newCursors = _.cloneDeep @cursors
+        newCursors = @do.cursors()
         joinLines = []
         for c in @cursors.reversed()
             csel = @continuousSelectionAtPos c
@@ -1528,7 +1528,7 @@ class Editor extends Buffer
             @deleteSelection()
         else
             @do.start()
-            newCursors = _.cloneDeep @cursors
+            newCursors = @do.cursors()
             for c in @reversedCursors()
             
                 if @isCursorAtEndOfLine c # cursor at end of line
@@ -1593,7 +1593,7 @@ class Editor extends Buffer
         @do.end()
 
     deleteCharacterBackward: (opt) ->
-        newCursors = _.cloneDeep @cursors
+        newCursors = @do.cursors()
         
         removeNum = switch
             when opt?.singleCharacter    then 1
