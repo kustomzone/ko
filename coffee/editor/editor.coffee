@@ -845,9 +845,6 @@ class Editor extends Buffer
     # 000   000  000      000   000         000       000   000  000   000       000  000   000  000   000
     #  0000000   0000000  0000000            0000000   0000000   000   000  0000000    0000000   000   000
     
-    oldCursorDelta: (oldCursors, newCursors, oc, dx, dy=0) ->
-        @cursorDelta newCursors[oldCursors.indexOf oc], dx, dy
-
     oldCursorSet: (oldCursors, newCursors, oc, x, y) ->
         @cursorSet newCursors[oldCursors.indexOf oc], x, y
         
@@ -966,15 +963,14 @@ class Editor extends Buffer
 
     deIndent: -> 
         @do.start()
-        oldCursors    = @state.cursors()
         newSelections = @do.selections()
         newCursors    = @do.cursors()
         for i in @selectedAndCursorLineIndices()
             if @lines[i].startsWith @indentString
                 @do.change i, @lines[i].substr @indentString.length
-                lineCursors = @positionsForLineIndexInPositions i, oldCursors 
-                for c in lineCursors
-                    @oldCursorDelta oldCursors, newCursors, c, -@indentString.length
+                lineCursors = @positionsForLineIndexInPositions i, newCursors 
+                for nc in lineCursors
+                    @cursorDelta nc, -@indentString.length
                 for ns in @rangesForLineIndexInRanges i, newSelections
                     ns[1][0] -= @indentString.length
                     ns[1][1] -= @indentString.length
@@ -984,13 +980,12 @@ class Editor extends Buffer
         
     indent: ->
         @do.start()
-        oldCursors    = @state.cursors()
         newSelections = @do.selections()
         newCursors    = @do.cursors()
         for i in @selectedAndCursorLineIndices()
             @do.change i, @indentString + @lines[i]
-            for c in @positionsForLineIndexInPositions i, oldCursors
-                @oldCursorDelta oldCursors, newCursors, c, @indentString.length
+            for nc in @positionsForLineIndexInPositions i, newCursors
+                @cursorDelta nc, @indentString.length
             for ns in @rangesForLineIndexInRanges i, newSelections
                 ns[1][0] += @indentString.length
                 ns[1][1] += @indentString.length
@@ -1132,12 +1127,11 @@ class Editor extends Buffer
         else
             @do.start()
             newCursors = @do.cursors()
-            oldCursors = @state.cursors()
             il = @indentString.length
-            for c in oldCursors
+            for c in newCursors
                 n = 4-(c[0]%il)
                 @do.change c[1], @do.line(c[1]).splice c[0], 0, _.padStart "", n
-                @oldCursorDelta oldCursors, newCursors, c, n
+                @cursorDelta c, n
             @do.cursor newCursors
             @do.end()   
         
@@ -1241,27 +1235,27 @@ class Editor extends Buffer
         @do.start()        
         @clampCursorOrFillVirtualSpaces()
         
-        oldCursors = @state.cursors()
+        newCursors = @do.cursors()
 
         l = text.split '\n'
-        if oldCursors.length > 1 and l.length == 1
-            l = (l[0] for c in oldCursors)
+        if newCursors.length > 1 and l.length == 1
+            l = (l[0] for c in newCursors)
                     
-        if oldCursors.length > 1 or l.length == 1 and (not @isCursorAtStartOfLine() or not text.endsWith '\n')
-            newCursors = @do.cursors()
-            for ci in [oldCursors.length-1..0]
-                c = oldCursors[ci]
+        if newCursors.length > 1 or l.length == 1 and (newCursors[0] > 0 or not text.endsWith '\n')
+            for ci in [newCursors.length-1..0]
+                c = newCursors[ci]
                 insert = l[ci % l.length]
                 @do.change c[1], @lines[c[1]].splice c[0], 0, insert
-                for c in @positionsAfterLineColInPositions c[1], c[0], oldCursors
-                    @oldCursorDelta oldCursors, newCursors, c, insert.length
+                for c in @positionsAfterLineColInPositions c[1], c[0], newCursors
+                    @cursorDelta c, insert.length
         else
-            cp = @cursorPos()
+            cp = newCursors[0]
             li = cp[1]
             newSelections = []
-            if not @isCursorAtStartOfLine()
-                rest   = @do.line(li).substr(@cursorPos()[0]).trimLeft()
-                indt   = _.padStart "", @indentationAtLineIndex cp[1] 
+            newCursors = []
+            if cp[0] > 0
+                rest   = @do.line(li).substr(cp[0]).trimLeft()
+                indt   = _.padStart "", @indentationInLine @do.line cp[1] 
                 before = @do.line(cp[1]).substr 0, cp[0]
                 if before.trim().length
                     @do.change li, before
@@ -1387,11 +1381,13 @@ class Editor extends Buffer
                     
             @do.change ns[0], @do.line(ns[0]).splice ns[1][1], 0, cr
             @do.change ns[0], @do.line(ns[0]).splice ns[1][0], 0, cl
-            
+           
             for c in @positionsAfterLineColInPositions ns[0], ns[1][0], newCursors
+                log 'left delta', c, cl.length
                 @cursorDelta c, cl.length
-                
+
             for c in @positionsAfterLineColInPositions ns[0], ns[1][1]+1, newCursors
+                log 'right delta', c, cr.length
                 @cursorDelta c, cr.length
                 
             for os in @rangesAfterLineColInRanges ns[0], ns[1][1], newSelections
