@@ -1472,7 +1472,6 @@ class Editor extends Buffer
         @checkSalterMode()
         
     deleteTab: ->
-        log 'deleteTab'
         if @numSelections()
             @deIndent()
         else
