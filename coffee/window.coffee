@@ -19,7 +19,7 @@ str,
 log,
 $}          = require 'kxk'
 Split       = require './split'
-View        = require './editor/view'
+
 Area        = require './area/area'
 Commandline = require './commandline/commandline'
 Terminal    = require './terminal/terminal'
@@ -82,7 +82,7 @@ delState = window.delState = (key)        -> prefs.del "windows:#{winID}:#{key}"
 ipc.on 'shellCommandData',  (event, cmdData) => commandline.commands['term'].onShellCommandData cmdData
 ipc.on 'shellCallbackData', (event, cmdData) => commandline.commands['term'].onShellCallbackData cmdData
 ipc.on 'singleCursorAtPos', (event, pos, extend) => 
-    editor.singleCursorAtPos pos, extend
+    editor.singleCursorAtPos pos, extend:extend
     editor.scrollCursorToTop()
 ipc.on 'openFile',          (event, options) => openFile options
 ipc.on 'focusEditor',       (event) => split.focus '.editor'

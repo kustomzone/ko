@@ -43,8 +43,6 @@ class Do
         if @groupCount == 1
             @startState = @state = @editor.state
             @history.push @state
-        else
-            @state = @editor.state
 
     # 00     00   0000000   0000000    000  00000000  000   000
     # 000   000  000   000  000   000  000  000        000 000 
@@ -311,7 +309,10 @@ class Do
     
     cursors: -> @state.cursors()
     numCursors: -> @state.numCursors()
-    
+    mainCursor: -> 
+        mc = @state.mainCursor()
+        [mc?.get?('x') ? 0, mc?.get?('y') ? -1]
+        
     highlights: -> @state.highlights()
     numHighlights: -> @state.numHighlights()
             

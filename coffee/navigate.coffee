@@ -72,7 +72,7 @@ class Navigate
     navigateToFilePos: (filePos, opt) ->
         id = @main.activateWindowWithFile filePos.file
         if id?
-            @main.winWithID(id).webContents.send 'singleCursorAtPos', filePos.pos, opt.select
+            @main.winWithID(id).webContents.send 'singleCursorAtPos', filePos.pos, opt
         else
             if opt?.newWindow
                 @main.loadFile "#{filePos.file}:#{filePos.pos[1]+1}:#{filePos.pos[0]}"

@@ -163,7 +163,7 @@ class View extends ViewBase
                 file: file
                 pos:  [0, line]
                 winID: window.winID
-                select: opt?.select
+                extend: opt?.extend
         
         classes = ipc.sendSync 'indexer', 'classes'
         for clss, info of classes

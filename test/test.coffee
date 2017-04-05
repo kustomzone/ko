@@ -239,7 +239,7 @@ describe 'medium', ->
             .to.eql []
             
         it "select text", ->
-            editor.singleCursorAtPos [3,0], true
+            editor.singleCursorAtPos [3,0], extend:true
             expect editor.mainCursor()
             .to.eql [3,0]
             expect editor.cursors
@@ -425,7 +425,7 @@ describe 'complex', ->
         it "single", ->
             editor.setText '0000\n1111\n2222\n3333'
             editor.singleCursorAtPos [2,0]
-            editor.singleCursorAtPos [2,3], true
+            editor.singleCursorAtPos [2,3], extend:true
             undo.reset()
             
             editor.insertUserCharacter '-'
@@ -526,7 +526,7 @@ describe 'complex', ->
         it 'mixed', ->
             editor.setText '0000\n1111\n2222'
             editor.singleCursorAtPos [2,0]
-            editor.singleCursorAtPos [2,1], true
+            editor.singleCursorAtPos [2,1], extend:true
             editor.addCursorAtPos [2,2]
             undo.reset()
             editor.insertUserCharacter '-'
@@ -546,7 +546,7 @@ describe 'complex', ->
         it "delete selection", ->
             editor.setText '0000\n1111'
             editor.singleCursorAtPos [2,0]
-            editor.singleCursorAtPos [2,1], true
+            editor.singleCursorAtPos [2,1], extend:true
             editor.addCursorAtPos [3,1]
             undo.reset()
             editor.deleteSelection()
@@ -568,7 +568,7 @@ describe 'complex', ->
         it 'mix', ->
             editor.setText '0000\n1111'
             editor.singleCursorAtPos [2,0]
-            editor.singleCursorAtPos [2,1], true
+            editor.singleCursorAtPos [2,1], extend:true
             editor.addCursorAtPos [3,1]
             undo.reset()
             editor.insertUserCharacter '-'

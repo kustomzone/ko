@@ -253,7 +253,6 @@ class Editor extends Buffer
                 @do.cursor ([cols[ci-1], r[0]] for r in rgs)
     
     checkSalterMode: ->        
-        
         return if not @salterMode
         @setSalterMode false
         return if @cursors.length != 5
@@ -304,7 +303,7 @@ class Editor extends Buffer
     #      000  000  000  0000  000   000  000      000     
     # 0000000   000  000   000   0000000   0000000  00000000
     
-    singleCursorAtPos: (p, e) ->
+    singleCursorAtPos: (p, opt = extend:false) ->
         if @numLines() == 0
             @do.start()
             @do.insert 0, ''
@@ -341,22 +340,23 @@ class Editor extends Buffer
         @updateTitlebar?()
         @emit 'selection'
 
-    startSelection: (e) ->
+    startSelection: (extend) ->
                     
     endSelection: (extend) ->
         
         if not extend
-            if @selections.length and not @stickySelection
+            if @do.numSelections() and not @stickySelection
                 @selectNone()
         else
-            newSelection = _.cloneDeep @selections
-            newCursors = @do.state.cursors()
+            newSelection = _.cloneDeep @do.selections()
+            oldCursors = @state.cursors()
+            newCursors = @do.cursors()
             
-            if @cursors.length != newCursors.length
-                log '[WARNING] editor.endSelection -- oldCursors.size != newCursors.size', @cursors.length, newCursors.length
+            if oldCursors.length != newCursors.length
+                log '[WARNING] editor.endSelection -- oldCursors.size != newCursors.size', oldCursors.length, newCursors.length
             
-            for ci in [0...@cursors.length]
-                oc = @cursors[ci]
+            for ci in [0...@do.numCursors()]
+                oc = oldCursors[ci]
                 nc = newCursors[ci]
                 ranges = @rangesBetweenPositions oc, nc, true #< extend to full lines if cursor at start of line                
                 newSelection = newSelection.concat ranges
@@ -854,7 +854,7 @@ class Editor extends Buffer
     # 000 0 000  000   000     000     000     
     # 000   000   0000000       0      00000000
 
-    moveAllCursors: (f, opt={}) ->        
+    moveAllCursors: (f, opt= extend:false) ->        
         @do.start()
         @startSelection opt.extend
         newCursors = _.cloneDeep @cursors
@@ -1433,8 +1433,6 @@ class Editor extends Buffer
         @do.cursor newCursors, main: 0
         @do.end()
             
-    deleteLineAtIndex: (i) -> @do.delete i
-    
     #  0000000  00000000  000      00000000   0000000  000000000  000   0000000   000   000
     # 000       000       000      000       000          000     000  000   000  0000  000
     # 0000000   0000000   000      0000000   000          000     000  000   000  000 0 000
@@ -1621,4 +1619,5 @@ class Editor extends Buffer
                         @newCursorDelta newCursors, nc, -n
         @do.cursors newCursors
         @do.cursor newCursors
+        
 module.exports = Editor

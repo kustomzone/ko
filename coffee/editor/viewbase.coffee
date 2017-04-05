@@ -587,14 +587,14 @@ class ViewBase extends Editor
                 else if event.metaKey
                     @toggleCursorAtPos p
                 else
-                    @singleCursorAtPos p, event.shiftKey
+                    @singleCursorAtPos p, extend:event.shiftKey
             
             onMove: (drag, event) => 
                 p = @posForEvent event
                 if event.metaKey
                     @addCursorAtPos [@mainCursor()[0], p[1]]
                 else
-                    @singleCursorAtPos p, true
+                    @singleCursorAtPos p, extend:true
                 
     startClickTimer: =>
         clearTimeout @clickTimer
