@@ -440,23 +440,22 @@ class Editor extends Buffer
 
     selectMoreLines: ->
         @do.start()
-        oldCursors = @state.cursors()
-        newCursors = @do.cursors()
+        newCursors    = @do.cursors()
         newSelections = @do.selections()
         
         selectCursorLineAtIndex = (c,i) =>
-            range = @rangeForLineAtIndex i
+            range = [i, [0, @do.line(i).length]] 
             newSelections.push range
-            @oldCursorSet oldCursors, newCursors, c, range[1][1], range[0]
+            @cursorSet c, @rangeEndPos range
             
         start = false
-        for c in oldCursors
+        for c in newCursors
             if not @isSelectedLineAtIndex c[1]
                 selectCursorLineAtIndex c, c[1]
                 start = true
                 
         if not start
-            for c in oldCursors
+            for c in newCursors
                 selectCursorLineAtIndex c, c[1]+1 if c[1] < @numLines()-1
                 
         @do.select newSelections
@@ -465,16 +464,15 @@ class Editor extends Buffer
 
     selectLessLines: -> 
         @do.start()
-        oldCursors    = @state.cursors()
         newCursors    = @do.cursors()
         newSelections = @do.selections()
         
-        for c in oldCursors.reversed()
+        for c in newCursors.reversed()
             thisSel = @selectionsInLineAtIndex(c[1])
             if thisSel.length
                 if @isSelectedLineAtIndex c[1]-1
                     s = @selectionsInLineAtIndex(c[1]-1)[0]
-                    @oldCursorSet oldCursors, newCursors, c, s[1][1], s[0]
+                    @cursorSet c, s[1][1], s[0]
                 newSelections.splice @indexOfSelection(thisSel[0]), 1
 
         @do.select newSelections
@@ -775,14 +773,14 @@ class Editor extends Buffer
 
     alignCursors: (dir='down') ->
         @do.start()
-        charPos = switch dir
-            when 'up'    then first(@cursors)[0]
-            when 'down'  then last( @cursors)[0]
-            when 'left'  then _.min (c[0] for c in @cursors)
-            when 'right' then _.max (c[0] for c in @cursors)
         newCursors = @do.cursors()
-        for c in @cursors
-            @oldCursorSet newCursors, c, charPos, c[1]
+        charPos = switch dir
+            when 'up'    then first(newCursors)[0]
+            when 'down'  then last(newCursors)[0]
+            when 'left'  then _.min (c[0] for c in newCursors)
+            when 'right' then _.max (c[0] for c in newCursors)
+        for c in newCursors
+            @cursorSet c, charPos, c[1]
         main = switch dir
             when 'up'    then 'first'
             when 'down'  then 'last'
@@ -839,15 +837,6 @@ class Editor extends Buffer
         @do.select []
         @do.end()
 
-    #  0000000   000      0000000            0000000  000   000  00000000    0000000   0000000   00000000 
-    # 000   000  000      000   000         000       000   000  000   000  000       000   000  000   000
-    # 000   000  000      000   000         000       000   000  0000000    0000000   000   000  0000000  
-    # 000   000  000      000   000         000       000   000  000   000       000  000   000  000   000
-    #  0000000   0000000  0000000            0000000   0000000   000   000  0000000    0000000   000   000
-    
-    oldCursorSet: (oldCursors, newCursors, oc, x, y) ->
-        @cursorSet newCursors[oldCursors.indexOf oc], x, y
-        
     # 00     00   0000000   000   000  00000000
     # 000   000  000   000  000   000  000     
     # 000000000  000   000   000 000   0000000 
@@ -857,18 +846,17 @@ class Editor extends Buffer
     moveAllCursors: (func, opt = extend:false, keepLine:true) ->        
         @do.start()
         @startSelection opt
-        oldCursors = @state.cursors()
         newCursors = @do.cursors()
         oldMain = @mainCursor()
         mainLine = oldMain[1]
         if newCursors.length > 1
-            for c in oldCursors
+            for c in newCursors
                 newPos = func c 
                 if newPos[1] == c[1] or not opt.keepLine
                     mainLine = newPos[1] if @isSamePos oldMain, c
-                    @oldCursorSet oldCursors, newCursors, c, newPos
+                    @cursorSet c, newPos
         else
-            @oldCursorSet oldCursors, newCursors, oldCursors[0], func oldCursors[0] 
+            @cursorSet newCursors[0], func newCursors[0] 
             mainLine = newCursors[0][1]
         main = switch opt.main
             when 'top'   then 'first'
