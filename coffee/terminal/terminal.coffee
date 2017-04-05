@@ -67,7 +67,7 @@ class Terminal extends ViewBase
                 
     appendLineDiss: (text, diss=[]) ->
         @syntax.setDiss @numLines(), diss if diss?.length
-        tail = @cursorPos()[1] == @numLines()-1 and @cursors.length == 1
+        tail = @cursorPos()[1] == @numLines()-1 and @numCursors() == 1
         @appendText text
         if tail
             @singleCursorAtPos [0, @numLines()-1] 

@@ -44,7 +44,7 @@ module.exports = class Ranges
     # 000         0000000   0000000   000     000     000   0000000   000   000  0000000   
 
     positionsFromPosInPositions: (p, pl) -> (r for r in pl when ((r[1] > p[1]) or ((r[1] == p[1]) and (r[0] >= p[0]))))
-    positionsInLineAtIndexInPositions: (li,pl) -> (p for p in pl when p[1] == li)
+    positionsForLineIndexInPositions: (li,pl) -> (p for p in pl when p[1] == li)
     positionsBelowLineIndexInPositions: (li,pl) -> (p for p in pl when p[1] > li)
     positionsAfterLineColInPositions: (li,col,pl) -> (p for p in pl when p[1] == li and p[0]>=col)
     positionsNotInRanges: (pss, rgs) -> _.filter pss, (p) => not @isPosInRanges p, rgs

@@ -24,7 +24,7 @@ class LogView extends ViewBase
                 
     appendText: (text) =>
         
-        tail = @cursorPos()[1] == @numLines()-1 and @cursors.length == 1
+        tail = @cursorPos()[1] == @numLines()-1 and @numCursors() == 1
         super text
         if tail
             @singleCursorAtPos [0, @numLines()-1] 

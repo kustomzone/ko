@@ -259,7 +259,7 @@ class ViewBase extends Editor
             lineIndex: li
             lineDiv: div
             
-        @renderCursors() if @cursorsInLineAtIndex(li).length
+        @renderCursors() if @positionsForLineIndexInPositions(li, @cursors).length
         @renderSelection() if @rangesForLineIndexInRanges(li, @selections).length
         @renderHighlights() if @rangesForLineIndexInRanges(li, @highlights).length
         
@@ -359,7 +359,7 @@ class ViewBase extends Editor
             if c[1] >= @scroll.exposeTop and c[1] <= @scroll.exposeBot
                 cs.push [c[0], c[1] - @scroll.exposeTop]
 
-        if @cursors.length == 1
+        if @numCursors() == 1
             if cs.length == 1
                 
                 if @mainCursor()[1] > @numLines()-1
@@ -375,7 +375,7 @@ class ViewBase extends Editor
                     cs.push [cursorLine.length, ri, 'main off']
                 else
                     cs[0][2] = 'main off'
-        else if @cursors.length > 1
+        else if @numCursors() > 1
             vc = [] # virtual cursors
             for c in cs
                 if @isMainCursor [c[0], c[1] + @scroll.exposeTop]
@@ -628,7 +628,7 @@ class ViewBase extends Editor
                     return @setSalterMode false
                 if @hasHighlights()
                     return @clearHighlights()
-                if @cursors.length > 1
+                if @numCursors() > 1
                     return @clearCursors()
                 if @stickySelection
                     return @endStickySelection()
@@ -705,7 +705,7 @@ class ViewBase extends Editor
                 return 
                 
             when 'command+left', 'command+right'   
-                if @selections.length > 1 and @cursors.length == 1
+                if @numSelections() > 1 and @numCursors() == 1
                     return @setCursorsAtSelectionBoundary key
                 else
                     return @moveCursorsToLineBoundary key

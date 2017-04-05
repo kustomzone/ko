@@ -255,7 +255,7 @@ class Editor extends Buffer
     checkSalterMode: ->        
         return if not @salterMode
         @setSalterMode false
-        return if @cursors.length != 5
+        return if @numCursors() != 5
         cp = @cursors[0]
         for c in @cursors.slice 1
             return if c[0] != cp[0]
@@ -491,26 +491,26 @@ class Editor extends Buffer
         d = dir == 'up' and -1 or 1
         
         @do.start()
-        newCursors    = _.cloneDeep @cursors
-        newSelections = _.cloneDeep @selections
+        newCursors    = @do.cursors()
+        newSelections = @do.selections()
 
         for r in csr.reversed()
             ls = []
             for li in [r[0]..r[1]]
-                ls.push _.cloneDeep @lines[li]
+                ls.push @do.line(li)
             
             switch dir 
-                when 'up'   then (si = r[0]-1) ; ls.push @lines[si]
-                when 'down' then (si = r[0])   ; ls.unshift @lines[r[1]+1]
+                when 'up'   then (si = r[0]-1) ; ls.push @do.line(si)
+                when 'down' then (si = r[0])   ; ls.unshift @do.line(r[1]+1)
 
             for i in [0...ls.length]
                 @do.change si+i, ls[i]
 
-        for s in @selections
-            newSelections[@indexOfSelection s][0] += d
+        for ns in newSelections
+            ns[0] += d
             
-        for c in @cursors
-            @oldCursorDelta newCursors, c, 0, d
+        for nc in newCursors
+            @newCursorDelta nc, 0, d
                 
         @do.select newSelections
         @do.cursor newCursors
@@ -534,12 +534,12 @@ class Editor extends Buffer
                 @do.insert r[1]+1+i, ls[i]
                 
             for nc in @positionsBelowLineIndexInPositions r[1]+1, newCursors
-                @newCursorDelta newCursors, nc, 0, ls.length # move cursors below inserted lines down
+                @newCursorDelta nc, 0, ls.length # move cursors below inserted lines down
                 
             if dir == 'down'
                 for i in [0...ls.length]
-                    for nc in @positionsInLineAtIndexInPositions r[0]+i, newCursors
-                        @newCursorDelta newCursors, nc, 0, ls.length # move cursors in inserted lines down
+                    for nc in @positionsForLineIndexInPositions r[0]+i, newCursors
+                        @newCursorDelta nc, 0, ls.length # move cursors in inserted lines down
 
         @do.select []
         @do.cursor newCursors
@@ -732,7 +732,7 @@ class Editor extends Buffer
         
     delCursorAtPos: (p) ->
         c = @cursorAtPos p
-        if c and @cursors.length > 1
+        if c and @numCursors() > 1
             @do.start()
             newCursors = _.cloneDeep @cursors
             newCursors.splice @indexOfCursor(c), 1
@@ -740,7 +740,7 @@ class Editor extends Buffer
             @do.end()
            
     addCursors: (dir='down') ->
-        return if @cursors.length >= 999
+        return if @numCursors() >= 999
         @do.start()
         d = switch dir
             when 'up'    then -1
@@ -841,19 +841,19 @@ class Editor extends Buffer
     # 000  0000  000       000   000         000       000   000  000   000       000  000   000  000   000
     # 000   000  00000000  00     00          0000000   0000000   000   000  0000000    0000000   000   000
     
-    oldCursorDelta: (newCursors, oc, dx, dy=0) ->
-        nc = newCursors[@indexOfCursor oc]
-        @newCursorDelta newCursors, nc, dx, dy
+    oldCursorDelta: (oldCursors, newCursors, oc, dx, dy=0) ->
+        nc = newCursors[oldCursors.indexOf oc]
+        @newCursorDelta nc, dx, dy
 
-    oldCursorSet: (newCursors, oc, x, y) ->
-        nc = newCursors[@indexOfCursor oc]
-        @newCursorSet newCursors, nc, x, y
+    oldCursorSet: (oldCursors, newCursors, oc, x, y) ->
+        nc = newCursors[oldCursors.indexOf oc]
+        @newCursorSet nc, x, y
         
-    newCursorDelta: (newCursors, nc, dx, dy=0) ->
+    newCursorDelta: (nc, dx, dy=0) ->
         nc[0] += dx
         nc[1] += dy
         
-    newCursorSet: (newCursors, nc, x, y) ->    
+    newCursorSet: (nc, x, y) ->    
         [x,y] = x if not y? and x.length >=2
         nc[0] = x
         nc[1] = y
@@ -864,26 +864,27 @@ class Editor extends Buffer
     # 000 0 000  000   000     000     000     
     # 000   000   0000000       0      00000000
 
-    moveAllCursors: (f, opt = extend:false) ->        
+    moveAllCursors: (func, opt = extend:false, keepLine:true) ->        
         @do.start()
         @startSelection opt
-        newCursors = _.cloneDeep @cursors
+        oldCursors = @state.cursors()
+        newCursors = @do.cursors()
         oldMain = @mainCursor()
         mainLine = oldMain[1]
-        if @cursors.length > 1
-            for c in @cursors
-                newPos = f(c)
+        if newCursors.length > 1
+            for c in oldCursors
+                newPos = func c 
                 if newPos[1] == c[1] or not opt.keepLine
                     mainLine = newPos[1] if @isSamePos oldMain, c
-                    @oldCursorSet newCursors, c, newPos
+                    @oldCursorSet oldCursors, newCursors, c, newPos
         else
-            @oldCursorSet newCursors, @cursors[0], f(@cursors[0])
+            @oldCursorSet oldCursors, newCursors, oldCursors[0], func oldCursors[0] 
             mainLine = newCursors[0][1]
         main = switch opt.main
             when 'top'   then 'first'
             when 'bot'   then 'last'
-            when 'left'  then newCursors.indexOf first @positionsInLineAtIndexInPositions mainLine, newCursors
-            when 'right' then newCursors.indexOf last  @positionsInLineAtIndexInPositions mainLine, newCursors
+            when 'left'  then newCursors.indexOf first @positionsForLineIndexInPositions mainLine, newCursors
+            when 'right' then newCursors.indexOf last  @positionsForLineIndexInPositions mainLine, newCursors
             
         @do.cursor newCursors, main:main
         @endSelection opt
@@ -946,7 +947,7 @@ class Editor extends Buffer
                 @do.select @rangesForCursorLines() # select lines without moving cursors
                 @do.end()
                 return
-        else if e and @stickySelection and @cursors.length == 1
+        else if e and @stickySelection and @numCursors() == 1
             if @mainCursor()[0] == 0 and not @isSelectedLineAtIndex @mainCursor()[1]
                 @do.start()
                 newSelections = _.cloneDeep @selections
@@ -972,15 +973,16 @@ class Editor extends Buffer
 
     deIndent: -> 
         @do.start()
-        newSelections = _.cloneDeep @selections
-        newCursors    = _.cloneDeep @cursors
+        oldCursors    = @state.cursors()
+        newSelections = @do.selections()
+        newCursors    = @do.cursors()
         for i in @selectedAndCursorLineIndices()
             if @lines[i].startsWith @indentString
                 @do.change i, @lines[i].substr @indentString.length
-                for c in @cursorsInLineAtIndex i
-                    @oldCursorDelta newCursors, c, -@indentString.length
-                for s in @selectionsInLineAtIndex i
-                    ns = newSelections[@indexOfSelection s]
+                lineCursors = @positionsForLineIndexInPositions i, oldCursors 
+                for c in lineCursors
+                    @oldCursorDelta oldCursors, newCursors, c, -@indentString.length
+                for ns in @rangesForLineIndexInRanges i, newSelections
                     ns[1][0] -= @indentString.length
                     ns[1][1] -= @indentString.length
         @do.select newSelections
@@ -989,14 +991,14 @@ class Editor extends Buffer
         
     indent: ->
         @do.start()
-        newSelections = _.cloneDeep @selections
-        newCursors    = _.cloneDeep @cursors
+        oldCursors    = @state.cursors()
+        newSelections = @do.selections()
+        newCursors    = @do.cursors()
         for i in @selectedAndCursorLineIndices()
             @do.change i, @indentString + @lines[i]
-            for c in @cursorsInLineAtIndex i
-                @oldCursorDelta newCursors, c, @indentString.length
-            for s in @selectionsInLineAtIndex i
-                ns = newSelections[@indexOfSelection s]
+            for c in @positionsForLineIndexInPositions i, oldCursors
+                @oldCursorDelta oldCursors, newCursors, c, @indentString.length
+            for ns in @rangesForLineIndexInRanges i, newSelections
                 ns[1][0] += @indentString.length
                 ns[1][1] += @indentString.length
         @do.select newSelections
@@ -1035,15 +1037,16 @@ class Editor extends Buffer
     toggleComment: ->
         
         @do.start()
-        newCursors    = _.cloneDeep @cursors
-        newSelections = _.cloneDeep @selections
+        oldCursors    = @state.cursors()
+        newCursors    = @do.cursors()
+        newSelections = @do.selections()
         
         moveInLine = (i, d) => 
             for s in @selectionsInLineAtIndex i
                 newSelections[@selections.indexOf s][1][0] += d
                 newSelections[@selections.indexOf s][1][1] += d
             for c in @cursorsInLineAtIndex i
-                @oldCursorDelta newCursors, c, d
+                @oldCursorDelta oldCursors, newCursors, c, d
                 
         mainCursorLine = @do.line @mainCursor()[1]
         cs = mainCursorLine.indexOf @lineComment
@@ -1093,7 +1096,7 @@ class Editor extends Buffer
             @do.end()
             return
     
-        if ch == '>' and @cursors.length == 1 and @lineComment?
+        if ch == '>' and @numCursors() == 1 and @lineComment?
             cp = @cursorPos()
             cl = @lineComment.length
             if cp[0] >= cl and @do.line(cp[1]).slice(cp[0]-cl, cp[0]) == @lineComment
@@ -1111,7 +1114,7 @@ class Editor extends Buffer
         for c in @cursors # this looks weird
             cc = newCursors[@indexOfCursor c]
             @do.change cc[1], @do.line(cc[1]).splice cc[0], 0, ch
-            for nc in @positionsInLineAtIndexInPositions cc[1], newCursors
+            for nc in @positionsForLineIndexInPositions cc[1], newCursors
                 if nc[0] >= cc[0]
                     nc[0] += 1
 
@@ -1129,8 +1132,8 @@ class Editor extends Buffer
             @do.cursor [[x,y]]
         else # fill spaces between line ends and cursors
             for c in @cursors 
-                if c[0] > @lines[c[1]].length
-                    @do.change c[1], @lines[c[1]].splice c[0], 0, _.padStart '', c[0]-@lines[c[1]].length
+                if c[0] > @do.line(c[1]).length
+                    @do.change c[1], @do.line(c[1]).splice c[0], 0, _.padStart '', c[0]-@do.line(c[1]).length
         @do.end()
 
     insertTab: ->
@@ -1138,12 +1141,13 @@ class Editor extends Buffer
             @indent()
         else
             @do.start()
-            newCursors = _.cloneDeep @cursors
+            newCursors = @do.cursors()
+            oldCursors = @state.cursors()
             il = @indentString.length
-            for c in @cursors
+            for c in oldCursors
                 n = 4-(c[0]%il)
-                @do.change c[1], @lines[c[1]].splice c[0], 0, _.padStart "", n
-                @oldCursorDelta newCursors, c, n
+                @do.change c[1], @do.line(c[1]).splice c[0], 0, _.padStart "", n
+                @oldCursorDelta oldCursors, newCursors, c, n
             @do.cursor newCursors
             @do.end()   
         
@@ -1154,16 +1158,16 @@ class Editor extends Buffer
     # 000   000  00000000  00     00  0000000  000  000   000  00000000
         
     insertNewline: (opt) ->
-        
-        if @salterMode
-            @cursors = [@rangeEndPos @rangeForLineAtIndex @mainCursor()[1]]
-            @setSalterMode false
-            
+                    
         @surroundStack = []
         @deleteSelection()
         @do.start()
         
-        newCursors = _.cloneDeep @cursors
+        if @salterMode
+            newCursors = [@rangeEndPos @rangeForLineAtIndex @mainCursor()[1]]
+            @setSalterMode false
+        else
+            newCursors = @do.cursors()
         
         for c in @cursors.reversed()
         
@@ -1230,7 +1234,7 @@ class Editor extends Buffer
 
             # move cursors in and below inserted line down
             for nc in @positionsFromPosInPositions c, newCursors
-                @newCursorDelta newCursors, nc, nc[1] == c[1] and indent.length - bl or 0, 1
+                @newCursorDelta nc, nc[1] == c[1] and indent.length - bl or 0, 1
         
         @do.cursor newCursors
         @do.end()
@@ -1247,26 +1251,28 @@ class Editor extends Buffer
         @do.start()        
         @clampCursorOrFillVirtualSpaces()
         
+        oldCursors = @state.cursors()
+
         l = text.split '\n'
-        if @cursors.length > 1 and l.length == 1
-            l = (l[0] for c in @cursors)
+        if oldCursors.length > 1 and l.length == 1
+            l = (l[0] for c in oldCursors)
                     
-        if @cursors.length > 1 or l.length == 1 and (not @isCursorAtStartOfLine() or not text.endsWith '\n')
-            newCursors = _.cloneDeep @cursors
-            for ci in [@cursors.length-1..0]
-                c = @cursors[ci]
+        if oldCursors.length > 1 or l.length == 1 and (not @isCursorAtStartOfLine() or not text.endsWith '\n')
+            newCursors = @do.cursors()
+            for ci in [oldCursors.length-1..0]
+                c = oldCursors[ci]
                 insert = l[ci % l.length]
                 @do.change c[1], @lines[c[1]].splice c[0], 0, insert
-                for c in @positionsAfterLineColInPositions c[1], c[0], @cursors
-                    @oldCursorDelta newCursors, c, insert.length
+                for c in @positionsAfterLineColInPositions c[1], c[0], oldCursors
+                    @oldCursorDelta oldCursors, newCursors, c, insert.length
         else
             cp = @cursorPos()
             li = cp[1]
             newSelections = []
             if not @isCursorAtStartOfLine()
-                rest   = @lines[li].substr(@cursorPos()[0]).trimLeft()
+                rest   = @do.line(li).substr(@cursorPos()[0]).trimLeft()
                 indt   = _.padStart "", @indentationAtLineIndex cp[1] 
-                before = @lines[cp[1]].substr 0, cp[0]
+                before = @do.line(cp[1]).substr 0, cp[0]
                 if before.trim().length
                     @do.change li, before
                     li += 1
@@ -1322,10 +1328,12 @@ class Editor extends Buffer
         
         if @selections.length and ch in ['"', "'"] and @selectionContainsOnlyQuotes()
             return false
-                
+        
+        oldCursors = @state.cursors()
+        
         if @surroundStack.length
             if last(@surroundStack)[1] == ch
-                for c in @cursors 
+                for c in oldCursors
                     if @lines[c[1]][c[0]] != ch
                         @surroundStack = []
                         break
@@ -1345,14 +1353,14 @@ class Editor extends Buffer
                     break
                     
             if not found
-                for c in @cursors
+                for c in oldCursors
                     if @isRangeInString @rangeForPos c
                         found = true
                         break
             return false if not found
             
         if ch == "'" and not @selections.length # check if any alpabetical character is before any cursor
-            for c in @cursors
+            for c in oldCursors
                 if c[0] > 0 and /[A-Za-z]/.test @lines[c[1]][c[0]-1] 
                     return false
         
@@ -1360,9 +1368,9 @@ class Editor extends Buffer
         if @selections.length == 0
             newSelections = @rangesForCursors()
         else
-            newSelections = _.cloneDeep @selections
+            newSelections = @do.selections()
             
-        newCursors = _.cloneDeep @cursors
+        newCursors = @do.cursors()
 
         [cl,cr] = @surroundPairs[ch]
             
@@ -1389,14 +1397,14 @@ class Editor extends Buffer
                     ns[1][0] -= spaces
                     ns[1][1] -= spaces
 
-            @do.change ns[0], @lines[ns[0]].splice ns[1][1], 0, cr
-            @do.change ns[0], @lines[ns[0]].splice ns[1][0], 0, cl
+            @do.change ns[0], @do.line(ns[0]).splice ns[1][1], 0, cr
+            @do.change ns[0], @do.line(ns[0]).splice ns[1][0], 0, cl
             
-            for c in @positionsAfterLineColInPositions ns[0], ns[1][0], @cursors
-                @oldCursorDelta newCursors, c, cl.length
+            for c in @positionsAfterLineColInPositions ns[0], ns[1][0], oldCursors
+                @oldCursorDelta oldCursors, newCursors, c, cl.length
                 
-            for c in @positionsAfterLineColInPositions ns[0], ns[1][1]+1, @cursors
-                @oldCursorDelta newCursors, c, cr.length
+            for c in @positionsAfterLineColInPositions ns[0], ns[1][1]+1, oldCursors
+                @oldCursorDelta oldCursors, newCursors, c, cr.length
                 
             for os in @rangesAfterLineColInRanges ns[0], ns[1][1], newSelections
                 os[1][0] += cr.length
@@ -1436,10 +1444,10 @@ class Editor extends Buffer
                 @do.change c[1], before + after
                 @do.delete c[1]+1
                 newCursors.push [before.length, c[1]]
-                for nc in @positionsInLineAtIndexInPositions c[1]+1, newCursors 
-                    @newCursorDelta newCursors, nc, before.length, -1 
+                for nc in @positionsForLineIndexInPositions c[1]+1, newCursors 
+                    @newCursorDelta nc, before.length, -1
                 for nc in @positionsBelowLineIndexInPositions c[1], newCursors 
-                    @newCursorDelta newCursors, nc, 0, -1
+                    @newCursorDelta nc, 0, -1
         @do.cursor newCursors, main: 0
         @do.end()
             
@@ -1459,13 +1467,13 @@ class Editor extends Buffer
             if csel?
                 [sp, ep] = csel
                 for nc in @positionsBetweenPosAndPosInPositions sp, ep, newCursors
-                    @newCursorSet newCursors, nc, sp[0], sp[1]
+                    @newCursorSet nc, sp[0], sp[1]
                 if sp[1] < ep[1] and sp[0] > 0 and ep[0] < @lines[ep[1]].length 
                     # selection spans multiple lines and first and last line are cut
                     joinLines.push sp[1] 
                     for nc in @positionsAfterLineColInPositions ep[1], ep[0], newCursors
                         # set cursors after selection in last joined line
-                        @newCursorSet newCursors, nc, sp[0]+nc[0]-ep[0], sp[1] 
+                        @newCursorSet nc, sp[0]+nc[0]-ep[0], sp[1] 
                         
         for s in @reversedSelections()
             continue if s[0] >= @do.numLines()
@@ -1473,18 +1481,18 @@ class Editor extends Buffer
             if lineSelected and @do.numLines() > 1
                 @do.delete s[0]
                 for nc in @positionsBelowLineIndexInPositions s[0], newCursors
-                    @newCursorDelta newCursors, nc, 0, -1 # move cursors below deleted line up
+                    @newCursorDelta nc, 0, -1 # move cursors below deleted line up
             else
                 continue if s[0] >= @do.numLines()
                 @do.change s[0], @do.line(s[0]).splice s[1][0], s[1][1]-s[1][0]
                 for nc in @positionsAfterLineColInPositions s[0], s[1][1], newCursors
-                    @newCursorDelta newCursors, nc, -(s[1][1]-s[1][0]) # move cursors after deletion in same line left
+                    @newCursorDelta nc, -(s[1][1]-s[1][0]) # move cursors after deletion in same line left
 
             if s[0] in joinLines
                 @do.change s[0], @do.line(s[0]) + @do.line(s[0]+1)
                 @do.delete s[0]+1
                 for nc in @positionsBelowLineIndexInPositions s[0], newCursors
-                    @newCursorDelta newCursors, nc, 0, -1 # move cursors below deleted line up                
+                    @newCursorDelta nc, 0, -1 # move cursors below deleted line up
                 _.pull joinLines, s[0]
         
         @do.select []
@@ -1497,14 +1505,15 @@ class Editor extends Buffer
             @deIndent()
         else
             @do.start()
-            newCursors = _.cloneDeep @cursors
-            for c in @cursors
+            newCursors = @do.cursors()
+            oldCursors = @state.cursors()
+            for c in oldCursors
                 if c[0]
                     n = (c[0] % @indentString.length) or @indentString.length
                     t = @do.textInRange [c[1], [c[0]-n, c[0]]]
                     if t.trim().length == 0
-                        @do.change c[1], @lines[c[1]].splice c[0]-n, n
-                        @oldCursorDelta newCursors, c, -n
+                        @do.change c[1], @do.line(c[1]).splice c[0]-n, n
+                        @oldCursorDelta oldCursors, newCursors, c, -n
             @do.cursor newCursors
             @do.end()
     
@@ -1531,16 +1540,16 @@ class Editor extends Buffer
                         @do.delete c[1]+1
                                     
                         # move cursors in joined line
-                        for nc in @positionsInLineAtIndexInPositions c[1]+1, newCursors
-                            @newCursorDelta newCursors, nc, ll, -1
+                        for nc in @positionsForLineIndexInPositions c[1]+1, newCursors
+                            @newCursorDelta nc, ll, -1
                         # move cursors below deleted line up
                         for nc in @positionsBelowLineIndexInPositions c[1]+1, newCursors
-                            @newCursorDelta newCursors, nc, 0, -1
+                            @newCursorDelta nc, 0, -1
                 else
                     @do.change c[1], @lines[c[1]].splice c[0], 1
-                    for nc in @positionsInLineAtIndexInPositions c[1], newCursors
+                    for nc in @positionsForLineIndexInPositions c[1], newCursors
                         if nc[0] > c[0]
-                            @newCursorDelta newCursors, nc, -1
+                            @newCursorDelta nc, -1
 
             @do.cursor newCursors
             @do.end()
@@ -1610,11 +1619,11 @@ class Editor extends Buffer
                         @do.change c[1]-1, @do.line(c[1]-1) + @do.line(c[1])
                         @do.delete c[1]
                         # move cursors in joined line
-                        for nc in @positionsInLineAtIndexInPositions c[1], newCursors
-                            @newCursorDelta newCursors, nc, ll, -1
+                        for nc in @positionsForLineIndexInPositions c[1], newCursors
+                            @newCursorDelta nc, ll, -1
                         # move cursors below deleted line up
                         for nc in @positionsBelowLineIndexInPositions c[1], newCursors
-                            @newCursorDelta newCursors, nc, 0, -1
+                            @newCursorDelta nc, 0, -1
             else
                 if removeNum < 1 # delete spaces to line start or line end
                     t = @do.textInRange [c[1], [0, c[0]]]
@@ -1624,9 +1633,9 @@ class Editor extends Buffer
                 else
                     n = removeNum
                 @do.change c[1], @do.line(c[1]).splice c[0]-n, n
-                for nc in @positionsInLineAtIndexInPositions c[1], newCursors
+                for nc in @positionsForLineIndexInPositions c[1], newCursors
                     if nc[0] >= c[0]
-                        @newCursorDelta newCursors, nc, -n
+                        @newCursorDelta nc, -n
         @do.cursors newCursors
         @do.cursor newCursors
         

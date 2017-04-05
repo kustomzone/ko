@@ -108,7 +108,7 @@ class View extends ViewBase
             s.cursors    = [@cursorPos()] 
         else        
             s.main       = @state.get 'main'
-            s.cursors    = _.cloneDeep @cursors if @cursors.length > 1 or @cursors[0][0] or @cursors[0][1]
+            s.cursors    = _.cloneDeep @cursors if @numCursors() > 1 or @cursors[0][0] or @cursors[0][1]
             s.selections = _.cloneDeep @selections if @selections.length
             s.highlights = _.cloneDeep @highlights if @highlights.length
             
