@@ -1369,15 +1369,14 @@ class Editor extends Buffer
                     
             @do.change ns[0], @do.line(ns[0]).splice ns[1][1], 0, cr
             @do.change ns[0], @do.line(ns[0]).splice ns[1][0], 0, cl
-           
+            
             for c in @positionsAfterLineColInPositions ns[0], ns[1][0], newCursors
-                log 'left delta', c, cl.length
                 @cursorDelta c, cl.length
-
-            for c in @positionsAfterLineColInPositions ns[0], ns[1][1]+1, newCursors
-                log 'right delta', c, cr.length
-                @cursorDelta c, cr.length
                 
+            for c in @positionsAfterLineColInPositions ns[0], ns[1][1], newCursors
+                if c[0] > ns[1][1]+1
+                    @cursorDelta c, cr.length
+            
             for os in @rangesAfterLineColInRanges ns[0], ns[1][1], newSelections
                 os[1][0] += cr.length
                 os[1][1] += cr.length
