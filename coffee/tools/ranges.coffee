@@ -33,18 +33,19 @@ module.exports = class Ranges
             @sortRanges r
             @rangeBetween @rangeEndPos(r[0]), @rangeStartPos(r[1])
             
-    isPos:         (p)      -> p?.length == 2 and _.isNumber(p[0]) and _.isNumber(p[1])
-    isRange:       (r)      -> r?.length >= 2 and _.isNumber(r[0]) and r[1]?.length >= 2 and _.isNumber(r[1][0]) and _.isNumber(r[1][1])
-    isSameRange:   (a,b)    -> a[0]==b[0] and a[1][0]==b[1][0] and a[1][1]==b[1][1]
-    isSamePos:     (a,b)    -> a[1]==b[1] and a[0]==b[0]
-    isPosInRange:  (p, r)   -> (p[1] == r[0]) and (r[1][0] <= p[0] <= r[1][1])
-    isPosInRanges: (p, rgs) -> @rangeAtPosInRanges(p, rgs)?
+    isPos:         (p)       -> p?.length == 2 and _.isNumber(p[0]) and _.isNumber(p[1])
+    isRange:       (r)       -> r?.length >= 2 and _.isNumber(r[0]) and r[1]?.length >= 2 and _.isNumber(r[1][0]) and _.isNumber(r[1][1])
+    isSameRange:   (a,b)     -> a[0]==b[0] and a[1][0]==b[1][0] and a[1][1]==b[1][1]
+    isSamePos:     (a,b)     -> a[1]==b[1] and a[0]==b[0]
+    isPosInRange:  (p, r)    -> (p[1] == r[0]) and (r[1][0] <= p[0] <= r[1][1])
+    isPosInRanges: (p, rgs)  -> @rangeAtPosInRanges(p, rgs)?
+    isPosInPositions: (p,ps) -> @posInPositions(p,ps)?
 
-    rangeEndPos:   (r)      -> [r[1][1], r[0]]
-    rangeStartPos: (r)      -> [r[1][0], r[0]]
-    lengthOfRange: (r)      -> r[1][1] - r[1][0]
-    rangeIndexPos: (r,i)    -> [r[1][i], r[0]]
-    rangeGrownBy:  (r,d)    -> [r[0], [r[1][0]-d, r[1][1]+d]]
+    rangeEndPos:   (r)       -> [r[1][1], r[0]]
+    rangeStartPos: (r)       -> [r[1][0], r[0]]
+    lengthOfRange: (r)       -> r[1][1] - r[1][0]
+    rangeIndexPos: (r,i)     -> [r[1][i], r[0]]
+    rangeGrownBy:  (r,d)     -> [r[0], [r[1][0]-d, r[1][1]+d]]
 
     # 00000000    0000000    0000000  000  000000000  000   0000000   000   000   0000000  
     # 000   000  000   000  000       000     000     000  000   000  0000  000  000       
@@ -63,6 +64,10 @@ module.exports = class Ranges
             
     manhattanDistance: (a,b) -> Math.abs(a[1]-b[1])+Math.abs(a[0]-b[0])
         
+    posInPositions: (p,pl) ->
+        for c in pl
+            return c if @isSamePos p, c
+
     posClosestToPosInPositions: (p,pl) -> 
         minDist = 999999        
         for ps in pl
@@ -77,7 +82,8 @@ module.exports = class Ranges
     # 0000000    000000000  000 0 000  000  0000  0000000   0000000   
     # 000   000  000   000  000  0000  000   000  000            000  
     # 000   000  000   000  000   000   0000000   00000000  0000000   
-      
+    
+    rangesFromPositions: (pl) -> ([p[1], [p[0], p[0]]] for p in pl)  
     rangesForLineIndexInRanges: (li, ranges) -> (r for r in ranges when r[0]==li)
     rangesAfterLineColInRanges: (li,col,ranges) -> (r for r in ranges when r[0]==li and r[1][0] >= col)
     

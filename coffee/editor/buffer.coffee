@@ -67,11 +67,6 @@ class Buffer extends multi event, ranges
     # 000       000   000  000   000       000  000   000  000   000       000
     #  0000000   0000000   000   000  0000000    0000000   000   000  0000000 
             
-    cursorAtPos: (p,cl=@cursors) ->
-        for c in cl
-            if c[0] == p[0] and c[1] == p[1]
-                return c
-                
     cursorsInRange: (r) ->
         cs = []
         for c in @cursors
@@ -333,7 +328,6 @@ class Buffer extends multi event, ranges
     # 000   000  000   000  000  0000  000   000  000            000
     # 000   000  000   000  000   000   0000000   00000000  0000000 
         
-    rangesForCursors: (cs=@cursors) -> ([c[1], [c[0], c[0]]] for c in cs)
     rangesForCursorLines: (cs=@cursors) -> (@rangeForLineAtIndex c[1] for c in cs)  
     rangesForAllLines: -> @rangesForLinesFromTopToBot 0, @numLines()
 

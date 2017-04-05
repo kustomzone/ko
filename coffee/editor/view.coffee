@@ -29,7 +29,7 @@ class View extends ViewBase
     constructor: (viewElem) -> 
         
         window.split.on 'commandline', @onCommandline
-        post.on 'jumpTo', @jumpTo # is this used?
+        post.on 'jumpTo', @jumpTo
         @fontSizeDefault = 16
         super viewElem, features: ['Scrollbar', 'Numbers', 'Minimap', 'Autocomplete', 'Brackets', 'Strings']        
         @setText ''
@@ -42,7 +42,7 @@ class View extends ViewBase
     
     changed: (changeInfo, action) ->        
         super changeInfo, action
-        if changeInfo.lines
+        if changeInfo.changes.length
             @dirty = true # set dirty flag
             @updateTitlebar() 
 
@@ -53,7 +53,6 @@ class View extends ViewBase
     # 000       000  0000000  00000000
 
     setCurrentFile: (file, opt) ->
-        # log "View.setCurrentFile setCurrentFile #{file} opt:", opt
         @saveScrollCursorsAndSelections(opt) if not file and not opt?.noSaveScroll
         @dirty = false
         @syntax.name = 'txt'

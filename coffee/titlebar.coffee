@@ -25,7 +25,7 @@ class Titlebar
         $('.body').addEventListener 'focusin',  @closeList
 
     update: (info) ->
-        
+        log 'update', info
         ic  = info.focus and " focus" or ""
         dc  = info.dirty and " dirty" or "clean"
         dot = info.sticky and "○" or "●"

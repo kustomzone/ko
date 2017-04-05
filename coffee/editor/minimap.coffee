@@ -135,7 +135,7 @@ class Minimap
         @cursors.width = @width
         ctx = @cursors.getContext '2d'
         
-        for r in @editor.rangesFromTopToBotInRanges @scroll.exposeTop, @scroll.exposeBot, @editor.rangesForCursors()
+        for r in @editor.rangesFromTopToBotInRanges @scroll.exposeTop, @scroll.exposeBot, @editor.rangesFromPositions @editor.state.cursors()
             y = (r[0]-@scroll.exposeTop)*@scroll.lineHeight
             if 2*r[1][0] < @width
                 ctx.fillStyle = '#f80'
