@@ -273,7 +273,7 @@ class Commandline extends ViewBase
                         return stop event
                     if @selections.length
                         @do.start()
-                        @do.selections []
+                        @do.select []
                         @do.end()
                     return stop event
                 else if combo == 'tab'

@@ -133,11 +133,11 @@ class Brackets
         @clear()
         opn.clss = 'bracketmatch'
         cls.clss = 'bracketmatch'
-        @editor.highlights.push [opn.line, [opn.start, opn.start+opn.match.length], opn]
-        @editor.highlights.push [cls.line, [cls.start, cls.start+cls.match.length], cls]
+        @editor.addHighlight [opn.line, [opn.start, opn.start+opn.match.length], opn]
+        @editor.addHighlight [cls.line, [cls.start, cls.start+cls.match.length], cls]
         @editor.renderHighlights()
 
     clear: ->
-        @editor.highlights = @editor.highlights.filter (h) -> h[2]?.clss != 'bracketmatch'
+        @editor.setHighlights @editor.highlights.filter (h) -> h[2]?.clss != 'bracketmatch'
 
 module.exports = Brackets

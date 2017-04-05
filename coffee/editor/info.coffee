@@ -45,15 +45,15 @@ class Info
         @cursors.onclick = => @editor.focus() + @editor.clearCursors()
         @topline.appendChild @cursors
         
-        @selections = document.createElement 'span'
-        @selections.className = "info-selections"
-        @selections.onclick = => @editor.focus() + @editor.clearSelections()
-        @topline.appendChild @selections
+        @selecti = document.createElement 'span'
+        @selecti.className = "info-selections"
+        @selecti.onclick = => @editor.focus() + @editor.clearSelections()
+        @topline.appendChild @selecti
 
-        @highlights = document.createElement 'span'
-        @highlights.className = "info-highlights"
-        @highlights.onclick = => @editor.focus() + @editor.clearHighlights()
-        @topline.appendChild @highlights
+        @highlig = document.createElement 'span'
+        @highlig.className = "info-highlights"
+        @highlig.onclick = => @editor.focus() + @editor.clearHighlights()
+        @topline.appendChild @highlig
         
         @classes = document.createElement 'span'
         @classes.className = "info-classes empty"
@@ -182,13 +182,13 @@ class Info
         @sticky.classList.toggle 'empty', not @editor.stickySelection
         
     onSelection: =>
-        @selections.textContent = @editor.numSelections()
-        @selections.classList.toggle 'empty', @editor.numSelections() == 0
+        @selecti.textContent = @editor.numSelections()
+        @selecti.classList.toggle 'empty', @editor.numSelections() == 0
         @sticky.classList.toggle 'empty', not @editor.stickySelection
         
     onHighlight: =>
-        @highlights.textContent = @editor.numHighlights()
-        @highlights.classList.toggle 'empty', @editor.numHighlights() == 0
+        @highlig.textContent = @editor.numHighlights()
+        @highlig.classList.toggle 'empty', @editor.numHighlights() == 0
     
 module.exports = Info
 

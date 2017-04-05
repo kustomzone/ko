@@ -7,9 +7,15 @@
 _ = require 'lodash'
 
 module.exports = class Ranges
+
+    indentationInLine: (l) ->
+        s = 0
+        if l? and l.length > 0
+            l = l.trimRight()
+            s += 1 while l[s] == ' '
+        s
     
     rangeForPos:   (p)   -> [p[1], [p[0], p[0]]]
-
     rangeBetween: (a,b) -> 
         if @isPos(a) and @isPos(b) 
             [Math.min(a[1], b[1]), [Math.min(a[0], b[0]), Math.max(a[0], b[0])]]

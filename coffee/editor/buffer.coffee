@@ -32,30 +32,34 @@ class Buffer extends multi event, ranges
 
     setState: (@state) ->
         @selections = @state.selections()
-        for s in @selections
-            if s[0] == undefined
-                log "DAFUK selections #{@name}"
         @highlights = @state.highlights()
         @cursors    = @state.cursors()
         @lines      = @state.lines()
                     
         if @name == 'editor'
             if @mainCursor()[1] < 0 and @numLines()
-                log "DAFUK!"
+                log "DAFUK mainCursor"
+        for s in @selections
+            if s[0] == undefined
+                log "DAFUK selections #{@name}"
     
     mainCursor: -> 
         mc = @state.mainCursor()
-        [mc.get?('x') ? 0, mc.get?('y') ? -1]
+        [mc?.get?('x') ? 0, mc?.get?('y') ? -1]
 
-    numLines: -> @state.numLines()
-    numCursors: -> @state.numCursors()
+    numLines:      -> @state.numLines()
+    numCursors:    -> @state.numCursors()
     numSelections: -> @state.numSelections()
     numHighlights: -> @state.numHighlights()
 
-    setCursors:    (c) -> @state = @state.setCursors c
-    setSelections: (s) -> @state = @state.setSelections s
-    setHighlights: (h) -> @state = @state.setHighlights h
-    setMain:       (m) -> @state = @state.setMain m
+    setCursors:    (c) -> @state = @state.setCursors(c);    @cursors    = @state.cursors()
+    setSelections: (s) -> @state = @state.setSelections(s); @selections = @state.selections()
+    setHighlights: (h) -> @state = @state.setHighlights(h); @highlights = @state.highlights()
+    setMain:       (m) -> @state = @state.setMain(m);
+    
+    addHighlight:  (h) -> 
+        @highlights.push h
+        @setHighlights @highlights
     
     #  0000000  000   000  00000000    0000000   0000000   00000000    0000000
     # 000       000   000  000   000  000       000   000  000   000  000     
@@ -246,12 +250,9 @@ class Buffer extends multi event, ranges
                 hl.push _.clone s
         hl
         
-    reversedHighlights: ->
-        r = _.clone @highlights
-        r.reverse()
-        r
+    reversedHighlights: -> @highlights.reversed()
         
-    posInHighlights: (p) -> @highlights.length and @rangeAtPosInRanges p, @highlights
+    posInHighlights: (p) -> @numHighlights() and @rangeAtPosInRanges p, @highlights
                     
     # 000000000  00000000  000   000  000000000
     #    000     000        000 000      000   

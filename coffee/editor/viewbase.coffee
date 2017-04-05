@@ -178,22 +178,22 @@ class ViewBase extends Editor
     changed: (changeInfo) ->
                 
         for change in changeInfo.changes
-            [oi,li,ch] = [change.oldIndex, change.newIndex, change.change]
+            [di,li,ch] = [change.doIndex, change.newIndex, change.change]
             switch ch
-                when 'changed'  then @syntax.diss[oi] = @syntax.dissForLineIndex li
-                when 'deleted'  then @syntax.diss.splice oi, 1
-                when 'inserted' then @syntax.diss.splice oi, 0, @syntax.dissForLineIndex li
+                when 'changed'  then @syntax.diss[di] = @syntax.dissForLineIndex li
+                when 'deleted'  then @syntax.diss.splice di, 1
+                when 'inserted' then @syntax.diss.splice di, 0, @syntax.dissForLineIndex li
 
         for change in changeInfo.changes
-            [oi,li,ch] = [change.oldIndex, change.newIndex, change.change]
+            [di,li,ch] = [change.doIndex, change.newIndex, change.change]
             switch ch
                 when 'changed'
-                    @updateLine li, oi
+                    @updateLine li, di
                     @emit 'lineChanged', li
                 when 'deleted'  
-                    @deleteLine li, oi
+                    @deleteLine li, di
                 when 'inserted'
-                    @insertLine li, oi                    
+                    @insertLine li, di                    
         
         if changeInfo.inserts or changeInfo.deletes           
             @scroll.setNumLines @numLines()
@@ -324,7 +324,7 @@ class ViewBase extends Editor
             @updateLine li
 
     clearHighlights: () ->
-        if @highlights.length
+        if @numHighlights()
             $('.highlights', @layers).innerHTML = ''
             super
    
@@ -703,7 +703,6 @@ class ViewBase extends Editor
                 @deleteSelection()
                 @do.end()
                 return 
-            when 'ctrl+shift+right'           then return @alignCursorsAndText()
                 
             when 'command+left', 'command+right'   
                 if @selections.length > 1 and @cursors.length == 1
@@ -713,14 +712,16 @@ class ViewBase extends Editor
                         
             when 'command+shift+left', 'command+shift+right' then return @moveCursorsToLineBoundary key, true
             when 'command+shift+up',   'command+shift+down'  then return @delCursors    key
-            when 'ctrl+shift+up',      'ctrl+shift+down'     then return @addMainCursor key
-            when 'alt+ctrl+up', 'alt+ctrl+down', 'alt+ctrl+left', 'alt+ctrl+right'   then return @alignCursors  key
-            when 'ctrl+up',     'ctrl+down',     'ctrl+left',      'ctrl+right'      then return @moveMainCursor key
-            when 'alt+left',    'alt+right',     'alt+shift+left', 'alt+shift+right' then return @moveCursorsToWordBoundary key, event.shiftKey
+            when 'ctrl+alt+shift+right'                      then return @alignCursorsAndText()
+            when 'alt+ctrl+up', 'alt+ctrl+down', 'alt+ctrl+left',  'alt+ctrl+right'        then return @alignCursors  key
+            when 'ctrl+up',     'ctrl+down',     'ctrl+left',      'ctrl+right'            then return @moveMainCursor key
+            when 'ctrl+shift+up', 'ctrl+shift+down', 'ctrl+shift+left', 'ctrl+shift+right' then return @moveMainCursor key, erase: true
+            when 'alt+left',    'alt+right',     'alt+shift+left', 'alt+shift+right'       then return @moveCursorsToWordBoundary key, event.shiftKey
             when 'down', 'right', 'up', 'left', 'shift+down', 'shift+right', 'shift+up', 'shift+left' 
                 @moveCursors key, event.shiftKey
                 stop event
-                
+        
+        # log 'combo', combo
         return if mod and not key?.length
         
         switch key

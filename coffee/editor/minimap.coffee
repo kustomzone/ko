@@ -30,11 +30,11 @@ class Minimap
         @topbot.className = "topbot"
         @elem.appendChild @topbot
 
-        @selections = document.createElement 'canvas'
-        @selections.className = "minimapSelections"
-        @selections.height    = @height
-        @selections.width     = @width
-        @elem.appendChild @selections
+        @selecti = document.createElement 'canvas'
+        @selecti.className = "minimapSelections"
+        @selecti.height    = @height
+        @selecti.width     = @width
+        @elem.appendChild @selecti
 
         @lines = document.createElement 'canvas'
         @lines.className = "minimapLines"
@@ -44,11 +44,11 @@ class Minimap
         @elem.addEventListener 'wheel', @editor.scrollbar?.onWheel
         @elem.appendChild @lines
 
-        @highlights = document.createElement 'canvas'
-        @highlights.className = "minimapHighlights"
-        @highlights.height    = @height
-        @highlights.width     = @width
-        @elem.appendChild @highlights
+        @highlig = document.createElement 'canvas'
+        @highlig.className = "minimapHighlights"
+        @highlig.height    = @height
+        @highlig.width     = @width
+        @elem.appendChild @highlig
 
         @cursors = document.createElement 'canvas'
         @cursors.className = "minimapCursors"
@@ -91,9 +91,9 @@ class Minimap
     # 0000000    000   000  000   000  00     00
 
     drawSelections: =>
-        @selections.height = @height
-        @selections.width = @width
-        ctx = @selections.getContext '2d'
+        @selecti.height = @height
+        @selecti.width = @width
+        ctx = @selecti.getContext '2d'
 
         ctx.fillStyle = '#444' 
         for r in @editor.rangesFromTopToBotInRanges @scroll.exposeTop, @scroll.exposeBot, @editor.selections
@@ -119,9 +119,9 @@ class Minimap
                     ctx.fillRect @offsetLeft+2*r.start, y, 2*r.match.length, @scroll.lineHeight
 
     drawHighlights: =>
-        @highlights.height = @height
-        @highlights.width = @width
-        ctx = @highlights.getContext '2d'
+        @highlig.height = @height
+        @highlig.width = @width
+        ctx = @highlig.getContext '2d'
 
         ctx.fillStyle = 'rgba(255,0,255,0.5)'
         for r in @editor.rangesFromTopToBotInRanges @scroll.exposeTop, @scroll.exposeBot, @editor.highlights
@@ -260,8 +260,8 @@ class Minimap
         y = parseInt -@height/4-@scroll.offsetTop/2
         x = parseInt @width/4
         t = "translate3d(#{x}px, #{y}px, 0px) scale3d(0.5, 0.5, 1)"
-        @selections.style.transform = t
-        @highlights.style.transform = t
+        @selecti.style.transform = t
+        @highlig.style.transform = t
         @cursors.style.transform    = t
         @lines.style.transform      = t
         
@@ -276,11 +276,11 @@ class Minimap
         ctx.clearRect 0, (top-@scroll.exposeTop)*@scroll.lineHeight, 2*@width, (bot-top)*@scroll.lineHeight
         
     clearAll: =>
-        @selections.width = @selections.width
-        @highlights.width = @highlights.width
-        @cursors.width    = @cursors.width
-        @topbot.width     = @topbot.width
-        @lines.width      = @lines.width
+        @selecti.width = @selecti.width
+        @highlig.width = @highlig.width
+        @cursors.width = @cursors.width
+        @topbot.width  = @topbot.width
+        @lines.width   = @lines.width
         @drawTopBot()
         
 module.exports = Minimap
