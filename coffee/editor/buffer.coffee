@@ -109,7 +109,7 @@ class Buffer extends multi event, ranges
     wordsAtCursors: (cs=@cursors, opt) -> (@textInRange @rangeForWordAtPos(c, opt) for c in cs)
 
     selectionTextOrWordAtCursor: () ->
-        if @selections.length == 1 
+        if @numSelections() == 1 
             @textInRange @selections[0]
         else
             @wordAtCursor()
@@ -227,7 +227,7 @@ class Buffer extends multi event, ranges
             [sp, ep]
         
     onlyFullLinesSelected: -> 
-        return false if not @selections.length
+        return false if not @numSelections()
         for s in @selections
             return false if not @isSameRange s, @rangeForLineAtIndex s[0]
         true

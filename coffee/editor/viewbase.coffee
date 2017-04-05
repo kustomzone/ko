@@ -632,7 +632,7 @@ class ViewBase extends Editor
                     return @clearCursors()
                 if @stickySelection
                     return @endStickySelection()
-                if @selections.length
+                if @numSelections()
                     return @selectNone()
         'unhandled'
 

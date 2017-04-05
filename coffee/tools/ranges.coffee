@@ -33,18 +33,18 @@ module.exports = class Ranges
             @sortRanges r
             @rangeBetween @rangeEndPos(r[0]), @rangeStartPos(r[1])
             
-    isPos: (p) -> p?.length == 2 and _.isNumber(p[0]) and _.isNumber(p[1])
-    isRange: (r) -> r?.length >= 2 and _.isNumber(r[0]) and r[1]?.length >= 2 and _.isNumber(r[1][0]) and _.isNumber(r[1][1])
-    isSameRange: (a,b) -> a[0]==b[0] and a[1][0]==b[1][0] and a[1][1]==b[1][1]
-    isSamePos: (a,b) -> a[1]==b[1] and a[0]==b[0]
-    isPosInRange: (p, r) -> (p[1] == r[0]) and (r[1][0] <= p[0] <= r[1][1])
+    isPos:         (p)      -> p?.length == 2 and _.isNumber(p[0]) and _.isNumber(p[1])
+    isRange:       (r)      -> r?.length >= 2 and _.isNumber(r[0]) and r[1]?.length >= 2 and _.isNumber(r[1][0]) and _.isNumber(r[1][1])
+    isSameRange:   (a,b)    -> a[0]==b[0] and a[1][0]==b[1][0] and a[1][1]==b[1][1]
+    isSamePos:     (a,b)    -> a[1]==b[1] and a[0]==b[0]
+    isPosInRange:  (p, r)   -> (p[1] == r[0]) and (r[1][0] <= p[0] <= r[1][1])
     isPosInRanges: (p, rgs) -> @rangeAtPosInRanges(p, rgs)?
 
-    rangeEndPos:   (r)   -> [r[1][1], r[0]]
-    rangeStartPos: (r)   -> [r[1][0], r[0]]
-    lengthOfRange: (r) -> r[1][1] - r[1][0]
-    rangeIndexPos: (r,i) -> [r[1][i], r[0]]
-    rangeGrownBy:  (r,delta) -> [r[0], [r[1][0]-delta, r[1][1]+delta]]
+    rangeEndPos:   (r)      -> [r[1][1], r[0]]
+    rangeStartPos: (r)      -> [r[1][0], r[0]]
+    lengthOfRange: (r)      -> r[1][1] - r[1][0]
+    rangeIndexPos: (r,i)    -> [r[1][i], r[0]]
+    rangeGrownBy:  (r,d)    -> [r[0], [r[1][0]-d, r[1][1]+d]]
 
     # 00000000    0000000    0000000  000  000000000  000   0000000   000   000   0000000  
     # 000   000  000   000  000       000     000     000  000   000  0000  000  000       

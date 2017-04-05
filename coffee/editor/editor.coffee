@@ -376,7 +376,7 @@ class Editor extends Buffer
         @checkSalterMode()      
 
     textOfSelectionForClipboard: -> 
-        @selectMoreLines() if @selections.length == 0
+        @selectMoreLines() if @numSelections() == 0
         @textOfSelection()
         
     textOfSelection: ->
@@ -567,7 +567,7 @@ class Editor extends Buffer
 
     highlightTextOfSelectionOrWordAtCursor: -> # command+e       
             
-        if @selections.length == 0
+        if @numSelections() == 0
             srange = @rangeForWordAtPos @cursorPos()
             @selectSingleRange srange
             
@@ -590,7 +590,7 @@ class Editor extends Buffer
                                 largerRange[1][0] -= 1
                                 largerText = @textInRange largerRange
                         text = largerText                        
-                        @selectSingleRange largerRange if @selections.length == 1
+                        @selectSingleRange largerRange if @numSelections() == 1
             
             @setHighlights @rangesForText text, max:9999
             @renderHighlights()
@@ -630,7 +630,7 @@ class Editor extends Buffer
             s = @cleanRanges s
             if s.length
                 @do.select s
-                if @selections.length
+                if @do.numSelections()
                     @do.cursor [@rangeEndPos(last s)], Main: 'closest'
             @do.end()
             
@@ -932,7 +932,7 @@ class Editor extends Buffer
         @moveAllCursors moveLeft(n), extend:e, keepLine:true, main: 'left'
         
     moveCursorsDown: (e, n=1) ->
-        if e and @selections.length == 0 # selecting lines down
+        if e and @numSelections() == 0 # selecting lines down
             if 0 == _.max (c[0] for c in @cursors) # all cursors in first column
                 @do.start()
                 @do.select @rangesForCursorLines() # select lines without moving cursors
@@ -1128,7 +1128,7 @@ class Editor extends Buffer
         @do.end()
 
     insertTab: ->
-        if @selections.length
+        if @numSelections()
             @indent()
         else
             @do.start()
@@ -1317,7 +1317,7 @@ class Editor extends Buffer
         if @isUnbalancedSurroundCharacter ch
             return false 
         
-        if @selections.length and ch in ['"', "'"] and @selectionContainsOnlyQuotes()
+        if @numSelections() and ch in ['"', "'"] and @selectionContainsOnlyQuotes()
             return false
         
         oldCursors = @state.cursors()
@@ -1350,13 +1350,13 @@ class Editor extends Buffer
                         break
             return false if not found
             
-        if ch == "'" and not @selections.length # check if any alpabetical character is before any cursor
+        if ch == "'" and not @numSelections() # check if any alpabetical character is before any cursor
             for c in oldCursors
                 if c[0] > 0 and /[A-Za-z]/.test @lines[c[1]][c[0]-1] 
                     return false
         
         @do.start()
-        if @selections.length == 0
+        if @do.numSelections() == 0
             newSelections = @rangesForCursors()
         else
             newSelections = @do.selections()
@@ -1449,7 +1449,7 @@ class Editor extends Buffer
     # 0000000   00000000  0000000  00000000   0000000     000     000   0000000   000   000
     
     deleteSelection: ->
-        return if not @selections.length
+        return if not @numSelections()
         @do.start()
         newCursors = @do.cursors()
         joinLines = []
@@ -1492,7 +1492,7 @@ class Editor extends Buffer
         @checkSalterMode()
         
     deleteTab: ->
-        if @selections.length
+        if @numSelections()
             @deIndent()
         else
             @do.start()
@@ -1515,7 +1515,7 @@ class Editor extends Buffer
     # 000        0000000   000   000  00     00  000   000  000   000  0000000  
     
     deleteForward: ->
-        if @selections.length
+        if @numSelections()
             @deleteSelection()
         else
             @do.start()
@@ -1554,9 +1554,10 @@ class Editor extends Buffer
     deleteBackward: (opt) ->
         
         @do.start()
-        if @selections.length
+        if @do.numSelections()
             @deleteSelection()
-        else if @cursors.length == 1 and not @isMainCursor(@cursorPos())
+        else if @do.numCursors() == 1 and not @isMainCursor(@cursorPos()) 
+            log "[???WTF???] editor.#{@name}.deleteBackward -- what is this doing ???"
             @do.cursor [@cursorPos()]
         else if @salterMode
             @deleteSalterCharacter()
@@ -1604,7 +1605,7 @@ class Editor extends Buffer
             
         for c in @reversedCursors()
             if c[0] == 0 # cursor at start of line
-                if opt?.ignoreLineBoundary or @cursors.length == 1
+                if opt?.ignoreLineBoundary or @do.numCursors() == 1
                     if c[1] > 0 # cursor not in first line
                         ll = @do.line(c[1]-1).length
                         @do.change c[1]-1, @do.line(c[1]-1) + @do.line(c[1])

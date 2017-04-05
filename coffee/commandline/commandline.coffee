@@ -271,7 +271,7 @@ class Commandline extends ViewBase
                 if @isCursorAtEndOfLine()
                     if @command?.complete()
                         return stop event
-                    if @selections.length
+                    if @numSelections()
                         @do.start()
                         @do.select []
                         @do.end()
