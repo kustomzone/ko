@@ -19,7 +19,7 @@ str,
 log,
 $}          = require 'kxk'
 Split       = require './split'
-
+View        = require './editor/view'
 Area        = require './area/area'
 Commandline = require './commandline/commandline'
 Terminal    = require './terminal/terminal'
